@@ -1,0 +1,2 @@
+# vv_core_inference
+VOICEVOXのコア内で用いられているディープラーニングモデルの推論コード
