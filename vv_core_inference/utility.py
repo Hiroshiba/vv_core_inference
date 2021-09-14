@@ -1,5 +1,4 @@
 import re
-from pathlib import Path
 from typing import Any, Union
 
 import numpy
