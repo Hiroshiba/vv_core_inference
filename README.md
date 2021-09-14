@@ -17,7 +17,7 @@ pip install -r requirements.txt
 ## モデルのダウンロード
 
 ```bash
-wget https://github.com/Hiroshiba/voicevox/releases/download/0.0.1/model.zip
+wget https://github.com/Hiroshiba/vv_core_inference/releases/download/0.0.1/model.zip
 unzip model.zip
 ```
 
