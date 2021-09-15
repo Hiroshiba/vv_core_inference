@@ -39,6 +39,8 @@ def run(
         device=device,
     )
 
+    # Forwarder。このForwarderクラスの中を書き換えずに
+    # yukarin_s_forwarder、yukarin_sa_forwarder、decode_forwarderを置き換えたい。
     forwarder = Forwarder(
         yukarin_s_forwarder=yukarin_s_forwarder,
         yukarin_sa_forwarder=yukarin_sa_forwarder,
