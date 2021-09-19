@@ -58,7 +58,7 @@ Cyhton が便利です。
 - `vv_core_inference` ･･･ いろいろな処理
   - `forwarder.py`
     - VOICEVOX と同じインターフェースと処理。
-    - このクラスを一切変更することなく、3 つの`forwarder`を与えられると完璧
+    - この`Forwarder`クラスを一切変更することなく、3 つの`forwarder`を与えられると完璧
   - `make_yukarin_s_forwarder.py`
     - 音素ごとの長さを求めるモデル`yukarin_s`用の`forwarder`を作る
   - `make_yukarin_sa_forwarder.py`
