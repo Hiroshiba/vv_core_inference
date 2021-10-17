@@ -77,8 +77,7 @@ class WrapperYukarinSosoa(nn.Module):
         output2 = output1 + self.postnet(output1.transpose(1, 2)).transpose(1, 2)
         return output2[0]
 
-
-def make_yukarin_sosoa_forwarder(yukarin_sosoa_model_dir: Path, device):
+def make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir: Path, device) -> nn.Module:
     with yukarin_sosoa_model_dir.joinpath("config.yaml").open() as f:
         config = Config.from_dict(yaml.safe_load(f))
 
@@ -91,14 +90,17 @@ def make_yukarin_sosoa_forwarder(yukarin_sosoa_model_dir: Path, device):
     predictor.apply(remove_weight_norm)
     predictor.encoder.embed[0].pe = predictor.encoder.embed[0].pe.to(device)
     print("yukarin_sosoa loaded!")
-    yukarin_sosoa_forwarder = WrapperYukarinSosoa(predictor)
+    return WrapperYukarinSosoa(predictor)
+
+def make_yukarin_sosoa_forwarder(yukarin_sosoa_model_dir: Path, device):
+    yukarin_sosoa_forwarder = make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir, device)
 
     def _dispatcher(
         f0: Tensor,
         phoneme: Tensor,
         speaker_id: Optional[numpy.ndarray] = None,
     ):
-        if predictor.speaker_embedder is not None and speaker_id is not None:
+        if speaker_id is not None:
             speaker_id = to_tensor(speaker_id, device=device)
         return yukarin_sosoa_forwarder(f0, phoneme, speaker_id)
 
