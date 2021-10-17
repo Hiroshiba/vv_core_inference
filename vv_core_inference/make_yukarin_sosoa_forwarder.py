@@ -40,41 +40,33 @@ class WrapperPostnet(nn.Module):
 
 
 class WrapperYukarinSosoa(nn.Module):
-    def __init__(self, predictor: Predictor, device):
+    def __init__(self, predictor: Predictor):
         super().__init__()
-
-        predictor.encoder.embed[0].pe = predictor.encoder.embed[0].pe.to(device)
 
         self.speaker_embedder = predictor.speaker_embedder
         self.pre = predictor.pre
         self.encoder = predictor.encoder
         self.post = predictor.post
         self.postnet = WrapperPostnet(predictor.postnet)
-        self.device = device
 
     @torch.no_grad()
     def forward(
         self,
         f0: Tensor,
         phoneme: Tensor,
-        speaker_id: Optional[numpy.ndarray] = None,
+        speaker_id: Tensor,
     ):
-        length_list = [f0.shape[0]]
-
-        length = torch.tensor(length_list).to(f0.device)
         f0 = f0.unsqueeze(0)
         phoneme = phoneme.unsqueeze(0)
 
         h = torch.cat((f0, phoneme), dim=2)  # (batch_size, length, ?)
 
-        if self.speaker_embedder is not None and speaker_id is not None:
-            speaker_id = to_tensor(speaker_id, device=self.device)
-            speaker_id = self.speaker_embedder(speaker_id)
-            speaker_id = speaker_id.unsqueeze(dim=1)  # (batch_size, 1, ?)
-            speaker_feature = speaker_id.expand(
-                speaker_id.shape[0], h.shape[1], speaker_id.shape[2]
-            )  # (batch_size, length, ?)
-            h = torch.cat((h, speaker_feature), dim=2)  # (batch_size, length, ?)
+        speaker_id = self.speaker_embedder(speaker_id)
+        speaker_id = speaker_id.unsqueeze(dim=1)  # (batch_size, 1, ?)
+        speaker_feature = speaker_id.expand(
+            speaker_id.shape[0], h.shape[1], speaker_id.shape[2]
+        )  # (batch_size, length, ?)
+        h = torch.cat((h, speaker_feature), dim=2)  # (batch_size, length, ?)
 
         h = self.pre(h)
 
@@ -97,7 +89,17 @@ def make_yukarin_sosoa_forwarder(yukarin_sosoa_model_dir: Path, device):
     predictor.load_state_dict(state_dict)
     predictor.eval().to(device)
     predictor.apply(remove_weight_norm)
+    predictor.encoder.embed[0].pe = predictor.encoder.embed[0].pe.to(device)
     print("yukarin_sosoa loaded!")
+    yukarin_sosoa_forwarder = WrapperYukarinSosoa(predictor)
 
-    yukarin_sosoa_forwarder = WrapperYukarinSosoa(predictor, device=device)
-    return yukarin_sosoa_forwarder
+    def _dispatcher(
+        f0: Tensor,
+        phoneme: Tensor,
+        speaker_id: Optional[numpy.ndarray] = None,
+    ):
+        if predictor.speaker_embedder is not None and speaker_id is not None:
+            speaker_id = to_tensor(speaker_id, device=device)
+        return yukarin_sosoa_forwarder(f0, phoneme, speaker_id)
+
+    return _dispatcher
