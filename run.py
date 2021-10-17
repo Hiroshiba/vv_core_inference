@@ -26,6 +26,9 @@ def run(
         from vv_core_inference.onnx_decode_forwarder import make_decode_forwarder
         from vv_core_inference.onnx_yukarin_s_forwarder import make_yukarin_s_forwarder
         from vv_core_inference.onnx_yukarin_sa_forwarder import make_yukarin_sa_forwarder
+        import onnxruntime
+        if use_gpu:
+            assert onnxruntime.get_device() == "GPU", "Install onnxruntime-gpu if you want to use GPU."
 
     convert = (method == "convert")
 
