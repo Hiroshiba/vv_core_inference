@@ -26,6 +26,7 @@ def run(
         from vv_core_inference.onnx_yukarin_s_forwarder import make_yukarin_s_forwarder
         from vv_core_inference.onnx_yukarin_sa_forwarder import make_yukarin_sa_forwarder
 
+    np.random.seed(0)
     device = "cuda" if use_gpu else "cpu"
     result = {
         "s": None,
@@ -97,3 +98,6 @@ if __name__ == "__main__":
 
     for key in ["s", "sa", "decode"]:
         print(key, np.allclose(torch_result[key], onnx_result[key]))
+
+    print(np.abs(torch_result["decode"] - onnx_result["decode"]).max())
+    print(np.abs(torch_result["decode"] - onnx_result["decode"]).max() / np.abs(torch_result["decode"]).max())
