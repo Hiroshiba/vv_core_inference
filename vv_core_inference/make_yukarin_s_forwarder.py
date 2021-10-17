@@ -11,23 +11,16 @@ from vv_core_inference.utility import to_tensor
 
 
 class WrapperYukarinS(nn.Module):
-    def __init__(self, predictor: Predictor, device):
+    def __init__(self, predictor: Predictor):
         super().__init__()
         self.predictor = predictor
-        self.device = device
 
     @torch.no_grad()
-    def forward(self, length: int, phoneme_list: Tensor, speaker_id: Optional[Tensor]):
-        phoneme_list = to_tensor(phoneme_list, device=self.device)
-
-        if speaker_id is not None:
-            speaker_id = to_tensor(speaker_id, device=self.device)
-            speaker_id = speaker_id.reshape((1,)).to(torch.int64)
-
+    def forward(self, phoneme_list: Tensor, speaker_id: Tensor):
         output = self.predictor(
             phoneme_list=phoneme_list.unsqueeze(0), speaker_id=speaker_id
         )[0]
-        return output.cpu().numpy()
+        return output
 
 
 def make_yukarin_s_forwarder(yukarin_s_model_dir: Path, device):
@@ -42,5 +35,12 @@ def make_yukarin_s_forwarder(yukarin_s_model_dir: Path, device):
     predictor.eval().to(device)
     print("yukarin_s loaded!")
 
-    yukarin_s_forwarder = WrapperYukarinS(predictor, device)
-    return yukarin_s_forwarder
+    yukarin_s_forwarder = WrapperYukarinS(predictor)
+    def _dispatcher(length: int, phoneme_list: Tensor, speaker_id: Optional[Tensor]):
+        phoneme_list = to_tensor(phoneme_list, device=device)
+        if speaker_id is not None:
+            speaker_id = to_tensor(speaker_id, device=device)
+            speaker_id = speaker_id.reshape((1,)).to(torch.int64)
+        return yukarin_s_forwarder(phoneme_list, speaker_id).cpu().numpy()
+
+    return _dispatcher
