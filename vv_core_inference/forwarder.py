@@ -135,16 +135,14 @@ class Forwarder:
 
         f0_list = self.yukarin_sa_forwarder(
             length=vowel_phoneme_list.shape[0],
-            vowel_phoneme_list=vowel_phoneme_list[numpy.newaxis],
-            consonant_phoneme_list=consonant_phoneme_list[numpy.newaxis],
-            start_accent_list=start_accent_list[vowel_indexes][numpy.newaxis],
-            end_accent_list=end_accent_list[vowel_indexes][numpy.newaxis],
-            start_accent_phrase_list=start_accent_phrase_list[vowel_indexes][
-                numpy.newaxis
-            ],
-            end_accent_phrase_list=end_accent_phrase_list[vowel_indexes][numpy.newaxis],
+            vowel_phoneme_list=vowel_phoneme_list,
+            consonant_phoneme_list=consonant_phoneme_list,
+            start_accent_list=start_accent_list[vowel_indexes],
+            end_accent_list=end_accent_list[vowel_indexes],
+            start_accent_phrase_list=start_accent_phrase_list[vowel_indexes],
+            end_accent_phrase_list=end_accent_phrase_list[vowel_indexes],
             speaker_id=numpy.array(speaker_id, dtype=numpy.int64).reshape(-1),
-        )[0]
+        )
         f0_list += f0_correct
 
         for i, p in enumerate(vowel_phoneme_data_list):

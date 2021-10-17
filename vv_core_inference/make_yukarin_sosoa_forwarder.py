@@ -55,15 +55,15 @@ class WrapperYukarinSosoa(nn.Module):
     @torch.no_grad()
     def forward(
         self,
-        f0_list: List[Tensor],
-        phoneme_list: List[Tensor],
+        f0: Tensor,
+        phoneme: Tensor,
         speaker_id: Optional[numpy.ndarray] = None,
     ):
-        length_list = [f0.shape[0] for f0 in f0_list]
+        length_list = [f0.shape[0]]
 
-        length = torch.tensor(length_list).to(f0_list[0].device)
-        f0 = pad_sequence(f0_list, batch_first=True)
-        phoneme = pad_sequence(phoneme_list, batch_first=True)
+        length = torch.tensor(length_list).to(f0.device)
+        f0 = f0.unsqueeze(0)
+        phoneme = phoneme.unsqueeze(0)
 
         h = torch.cat((f0, phoneme), dim=2)  # (batch_size, length, ?)
 
@@ -78,12 +78,12 @@ class WrapperYukarinSosoa(nn.Module):
 
         h = self.pre(h)
 
-        mask = make_non_pad_mask(length).to(length.device).unsqueeze(-2)
+        mask = torch.ones_like(f0).squeeze()
         h, _ = self.encoder(h, mask)
 
         output1 = self.post(h)
         output2 = output1 + self.postnet(output1.transpose(1, 2)).transpose(1, 2)
-        return [output2[i, :l] for i, l in enumerate(length_list)]
+        return output2[0]
 
 
 def make_yukarin_sosoa_forwarder(yukarin_sosoa_model_dir: Path, device):

@@ -42,20 +42,20 @@ class WrapperYukarinSa(nn.Module):
         end_accent_phrase_list: Tensor,
         speaker_id: Optional[Tensor],
     ):
-        vowel_phoneme_list = to_tensor(vowel_phoneme_list, device=self.device)
-        consonant_phoneme_list = to_tensor(consonant_phoneme_list, device=self.device)
-        start_accent_list = to_tensor(start_accent_list, device=self.device)
-        end_accent_list = to_tensor(end_accent_list, device=self.device)
+        vowel_phoneme_list = to_tensor(vowel_phoneme_list, device=self.device).unsqueeze(0)
+        consonant_phoneme_list = to_tensor(consonant_phoneme_list, device=self.device).unsqueeze(0)
+        start_accent_list = to_tensor(start_accent_list, device=self.device).unsqueeze(0)
+        end_accent_list = to_tensor(end_accent_list, device=self.device).unsqueeze(0)
         start_accent_phrase_list = to_tensor(
             start_accent_phrase_list, device=self.device
-        )
-        end_accent_phrase_list = to_tensor(end_accent_phrase_list, device=self.device)
+        ).unsqueeze(0)
+        end_accent_phrase_list = to_tensor(end_accent_phrase_list, device=self.device).unsqueeze(0)
 
         if speaker_id is not None:
             speaker_id = to_tensor(speaker_id, device=self.device)
             speaker_id = speaker_id.reshape((-1,)).to(torch.int64)
 
-        batch_size = vowel_phoneme_list.shape[0]
+        batch_size = 1
         length = vowel_phoneme_list.shape[1]
 
         ph = self.phoneme_embedder(vowel_phoneme_list + 1) + self.phoneme_embedder(
@@ -110,7 +110,7 @@ class WrapperYukarinSa(nn.Module):
             h = self.post(h)  # (batch_size, 1, length)
             f0 = h[:, 0, :]  # (batch_size, length)
 
-        return f0.cpu().numpy()  # (batch_size, length)
+        return f0[0].cpu().numpy()  # (batch_size, length)
 
 
 def make_yukarin_sa_forwarder(yukarin_sa_model_dir: Path, device):

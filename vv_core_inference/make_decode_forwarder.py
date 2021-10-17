@@ -38,13 +38,13 @@ class WrapperDecodeForwarder(nn.Module):
         phoneme: numpy.ndarray,
         speaker_id: Optional[numpy.ndarray] = None,
     ):
-        f0_list = [to_tensor(f0, device=self.device)]
-        phoneme_list = [to_tensor(phoneme, device=self.device)]
+        f0 = to_tensor(f0, device=self.device)
+        phoneme = to_tensor(phoneme, device=self.device)
 
         # forward sosoa
         spec = self.yukarin_sosoa_forwarder(
-            f0_list=f0_list, phoneme_list=phoneme_list, speaker_id=speaker_id
-        )[0]
+            f0=f0, phoneme=phoneme, speaker_id=speaker_id
+        )
 
         # forward hifi gan
         x = spec.T
