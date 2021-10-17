@@ -8,7 +8,7 @@ from hifi_gan.models import Generator as HifiGanPredictor
 from torch import nn
 
 from vv_core_inference.make_yukarin_sosoa_forwarder import make_yukarin_sosoa_wrapper
-from vv_core_inference.utility import to_tensor
+from vv_core_inference.utility import to_tensor, OPSET
 
 
 class AttrDict(dict):
@@ -46,7 +46,7 @@ class WrapperDecodeForwarder(nn.Module):
 
 
 def make_decode_forwarder(
-    yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path, device
+    yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path, device, convert=False
 ):
     # yukarin_sosoa
     yukarin_sosoa_wrapper = make_yukarin_sosoa_wrapper(
@@ -84,6 +84,21 @@ def make_decode_forwarder(
         phoneme = to_tensor(phoneme, device=device)
         if speaker_id is not None:
             speaker_id = to_tensor(speaker_id, device=device)
+        if convert:
+            torch.onnx.export(
+                decode_forwarder,
+                (f0, phoneme, speaker_id),
+                yukarin_sosoa_model_dir.joinpath("decode.onnx"),
+                opset_version=OPSET,
+                do_constant_folding=True,
+                input_names=["f0", "phoneme", "speaker_id"],
+                output_names=["wave"],
+                dynamic_axes={
+                    "f0": {0: "length"},
+                    "phoneme": {0: "length"},
+                    "wave": {0: "outlength"}
+                })
+            print("decode has been converted to ONNX")
         return decode_forwarder(f0, phoneme, speaker_id).cpu().numpy()
 
     return _dispatcher

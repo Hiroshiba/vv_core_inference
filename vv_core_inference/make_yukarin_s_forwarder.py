@@ -7,7 +7,7 @@ from torch import Tensor, nn
 from yukarin_s.config import Config
 from yukarin_s.network.predictor import Predictor, create_predictor
 
-from vv_core_inference.utility import to_tensor
+from vv_core_inference.utility import to_tensor, OPSET
 
 
 class WrapperYukarinS(nn.Module):
@@ -23,7 +23,7 @@ class WrapperYukarinS(nn.Module):
         return output
 
 
-def make_yukarin_s_forwarder(yukarin_s_model_dir: Path, device):
+def make_yukarin_s_forwarder(yukarin_s_model_dir: Path, device, convert=False):
     with yukarin_s_model_dir.joinpath("config.yaml").open() as f:
         config = Config.from_dict(yaml.safe_load(f))
 
@@ -41,6 +41,19 @@ def make_yukarin_s_forwarder(yukarin_s_model_dir: Path, device):
         if speaker_id is not None:
             speaker_id = to_tensor(speaker_id, device=device)
             speaker_id = speaker_id.reshape((1,)).to(torch.int64)
+        if convert:
+            torch.onnx.export(
+                yukarin_s_forwarder,
+                (phoneme_list, speaker_id),
+                yukarin_s_model_dir.joinpath("yukarin_s.onnx"),
+                opset_version=OPSET,
+                do_constant_folding=True,  # execute constant folding for optimization
+                input_names=["phoneme_list", "speaker_id"],
+                output_names=["phoneme_length"],
+                dynamic_axes={
+                    "phoneme_list": {0: "sequence"},
+                    "phoneme_length" : {0: "sequence"}})
+            print("yukarin_s has been converted to ONNX") 
         return yukarin_s_forwarder(phoneme_list, speaker_id).cpu().numpy()
 
     return _dispatcher

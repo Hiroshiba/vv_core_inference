@@ -4,7 +4,8 @@ from typing import Any, Union
 import numpy
 import torch
 from torch import Tensor
-
+from torch.onnx.symbolic_helper import _onnx_main_opset, _onnx_stable_opsets
+OPSET = _onnx_stable_opsets[-1]
 
 def extract_number(f):
     s = re.findall(r"\d+", str(f))
