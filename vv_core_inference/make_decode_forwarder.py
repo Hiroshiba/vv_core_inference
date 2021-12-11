@@ -7,8 +7,8 @@ import torch
 from hifi_gan.models import Generator as HifiGanPredictor
 from torch import nn
 
-from vv_core_inference.make_yukarin_sosoa_forwarder import make_yukarin_sosoa_forwarder
-from vv_core_inference.utility import to_tensor
+from vv_core_inference.make_yukarin_sosoa_forwarder import make_yukarin_sosoa_wrapper
+from vv_core_inference.utility import to_tensor, OPSET
 
 
 class AttrDict(dict):
@@ -22,41 +22,34 @@ class WrapperDecodeForwarder(nn.Module):
         self,
         yukarin_sosoa_forwarder: nn.Module,
         hifi_gan_forwarder: nn.Module,
-        device,
     ):
         super().__init__()
         self.yukarin_sosoa_forwarder = yukarin_sosoa_forwarder
         self.hifi_gan_forwarder = hifi_gan_forwarder
-        self.device = device
 
     @torch.no_grad()
     def forward(
         self,
-        length: int,
-        phoneme_size: int,
-        f0: numpy.ndarray,
-        phoneme: numpy.ndarray,
-        speaker_id: Optional[numpy.ndarray] = None,
+        f0: torch.Tensor,
+        phoneme: torch.Tensor,
+        speaker_id: torch.Tensor,
     ):
-        f0_list = [to_tensor(f0, device=self.device)]
-        phoneme_list = [to_tensor(phoneme, device=self.device)]
-
         # forward sosoa
         spec = self.yukarin_sosoa_forwarder(
-            f0_list=f0_list, phoneme_list=phoneme_list, speaker_id=speaker_id
-        )[0]
+            f0=f0, phoneme=phoneme, speaker_id=speaker_id
+        )
 
         # forward hifi gan
-        x = spec.T
+        x = spec.transpose(1, 0)
         wave = self.hifi_gan_forwarder(x.unsqueeze(0)).squeeze()
-        return wave.cpu().numpy()
+        return wave
 
 
 def make_decode_forwarder(
-    yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path, device
+    yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path, device, convert=False
 ):
     # yukarin_sosoa
-    yukarin_sosoa_forwarder = make_yukarin_sosoa_forwarder(
+    yukarin_sosoa_wrapper = make_yukarin_sosoa_wrapper(
         yukarin_sosoa_model_dir=yukarin_sosoa_model_dir, device=device
     )
 
@@ -76,9 +69,36 @@ def make_decode_forwarder(
     print("hifi-gan loaded!")
 
     decode_forwarder = WrapperDecodeForwarder(
-        yukarin_sosoa_forwarder=yukarin_sosoa_forwarder,
+        yukarin_sosoa_forwarder=yukarin_sosoa_wrapper,
         hifi_gan_forwarder=hifi_gan_predictor,
-        device=device,
     )
 
-    return decode_forwarder
+    def _dispatcher(
+        length: int,
+        phoneme_size: int,
+        f0: numpy.ndarray,
+        phoneme: numpy.ndarray,
+        speaker_id: Optional[numpy.ndarray] = None,
+    ):
+        f0 = to_tensor(f0, device=device)
+        phoneme = to_tensor(phoneme, device=device)
+        if speaker_id is not None:
+            speaker_id = to_tensor(speaker_id, device=device)
+        if convert:
+            torch.onnx.export(
+                decode_forwarder,
+                (f0, phoneme, speaker_id),
+                yukarin_sosoa_model_dir.joinpath("decode.onnx"),
+                opset_version=OPSET,
+                do_constant_folding=True,
+                input_names=["f0", "phoneme", "speaker_id"],
+                output_names=["wave"],
+                dynamic_axes={
+                    "f0": {0: "length"},
+                    "phoneme": {0: "length"},
+                    "wave": {0: "outlength"}
+                })
+            print("decode has been converted to ONNX")
+        return decode_forwarder(f0, phoneme, speaker_id).cpu().numpy()
+
+    return _dispatcher
