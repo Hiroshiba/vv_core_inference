@@ -65,6 +65,9 @@ def run(
         if method == "torch" or method == "onnx":
             soundfile.write(f"{method}-{text}-{speaker_id}.wav", data=wave, samplerate=24000)
 
+        if convert:
+            break
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
