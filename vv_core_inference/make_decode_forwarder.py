@@ -41,7 +41,7 @@ class WrapperDecodeForwarder(nn.Module):
 
         # forward hifi gan
         x = spec.transpose(1, 0)
-        wave = self.hifi_gan_forwarder(x.unsqueeze(0)).squeeze()
+        wave = self.hifi_gan_forwarder(x.unsqueeze(0))[0, 0]
         return wave
 
 
