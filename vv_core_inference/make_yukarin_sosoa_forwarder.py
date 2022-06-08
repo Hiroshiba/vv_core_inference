@@ -1,6 +1,6 @@
+import math
 from pathlib import Path
 from typing import List, Optional
-import math
 
 import numpy
 import torch
@@ -12,6 +12,7 @@ from yukarin_sosoa.config import Config
 from yukarin_sosoa.network.predictor import Predictor, create_predictor
 
 from vv_core_inference.utility import remove_weight_norm, to_tensor
+
 
 class RelPositionalEncoding(torch.nn.Module):
     """Variant of espnet_pytorch_library/transformer/embedding.py#RelPositionalEncoding
@@ -72,7 +73,7 @@ def make_pad_mask(lengths: Tensor):
     bs = lengths.shape[0]
     maxlen = lengths.max()
 
-    seq_range = torch.arange(0, maxlen, dtype=torch.int64, device=lengths.device)
+    seq_range = torch.arange(0, maxlen, dtype=torch.int32, device=lengths.device)
     seq_range_expand = seq_range.unsqueeze(0).expand(bs, maxlen)
     seq_length_expand = lengths.unsqueeze(-1)
     mask = seq_range_expand >= seq_length_expand

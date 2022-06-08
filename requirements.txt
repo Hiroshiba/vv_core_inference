@@ -8,3 +8,8 @@ git+https://github.com/Hiroshiba/yukarin_sa@18bbbefaaf49d4f19b77b3a863c33b4bb8af
 git+https://github.com/Hiroshiba/yukarin_sosoa@056124fbb1bc0f37bcd9432da0f18e7a04b28a62
 git+https://github.com/Hiroshiba/hifi-gan@17601a07573309ee305c58bf87a041f267b1c0c8#egg=hifi_gan
 git+https://github.com/Hiroshiba/pyopenjtalk@69e5f354634f98098113f9cac5a6ea736443f9c9#egg=pyopenjtalk
+
+# for onnx_typecast.py
+onnx
+typer<0.4
+colorlog==4.7.2

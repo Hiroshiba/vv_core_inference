@@ -56,6 +56,7 @@ Cyhton が便利です。
 * `python run.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"  --speaker_ids 5  --method=convert` でonnxへの変換が可能。modelフォルダ内のyukarin_s, yukarin_sa, yukarin_sosoaフォルダにonnxが保存される。
   - `speaker_ids`オプションに指定する数値は自由。どの数値を指定しても生成されるonnxモデルは全ての`speaker_id`に対応しており、値を変えて実行しなおしたり、複数のidを指定したりする必要は無い。
   - yukarin_sosoaフォルダにはhifi_ganと合わせた`decode.onnx`が保存される
+  - int64 to int32 `python onnx-typecast/convert.py model/yukarin_sosoa/decode.onnx model/yukarin_sosoa/decode.onnx`
 
 * onnxで実行したい場合は`--method=onnx`とする； `python run.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"  --speaker_ids 5  --method=onnx`
   - `speaker_ids`に複数の数値を指定すれば、通常実行と同様に各話者の音声が保存される。
