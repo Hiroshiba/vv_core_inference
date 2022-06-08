@@ -8,7 +8,7 @@ from hifi_gan.models import Generator as HifiGanPredictor
 from torch import nn
 
 from vv_core_inference.make_yukarin_sosoa_forwarder import make_yukarin_sosoa_wrapper
-from vv_core_inference.utility import to_tensor, OPSET
+from vv_core_inference.utility import OPSET, to_tensor
 
 
 class AttrDict(dict):
@@ -60,7 +60,8 @@ def make_decode_forwarder(
 
     hifi_gan_predictor = HifiGanPredictor(vocoder_model_config).to(device)
     checkpoint_dict = torch.load(
-        hifigan_model_dir.joinpath("model.pth"),
+        # hifigan_model_dir.joinpath("model.pth"),
+        hifigan_model_dir.joinpath("hoge.pt"),
         map_location=device,
     )
     hifi_gan_predictor.load_state_dict(checkpoint_dict["generator"])
@@ -93,11 +94,12 @@ def make_decode_forwarder(
                 do_constant_folding=True,
                 input_names=["f0", "phoneme", "speaker_id"],
                 output_names=["wave"],
-                dynamic_axes={
-                    "f0": {0: "length"},
-                    "phoneme": {0: "length"},
-                    "wave": {0: "outlength"}
-                })
+                # dynamic_axes={
+                #     "f0": {0: "length"},
+                #     "phoneme": {0: "length"},
+                #     "wave": {0: "outlength"},
+                # },
+            )
             print("decode has been converted to ONNX")
         return decode_forwarder(f0, phoneme, speaker_id).cpu().numpy()
 

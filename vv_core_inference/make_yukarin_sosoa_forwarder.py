@@ -19,6 +19,7 @@ class RelPositionalEncoding(torch.nn.Module):
     copyright 2019 shigeki karita
     apache 2.0  (http://www.apache.org/licenses/license-2.0)
     """
+
     def __init__(self, d_model, dropout_rate, max_len=5000):
         """Construct an PositionalEncoding object."""
         super().__init__()
@@ -40,8 +41,8 @@ class RelPositionalEncoding(torch.nn.Module):
         # Suppose `i` means to the position of query vecotr and `j` means the
         # position of key vector. We use position relative positions when keys
         # are to the left (i>j) and negative relative positions otherwise (i<j).
-        pe_positive = torch.zeros(x.size(1), self.d_model//2, 2)
-        pe_negative = torch.zeros(x.size(1), self.d_model//2, 2)
+        pe_positive = torch.zeros(x.size(1), self.d_model // 2, 2)
+        pe_negative = torch.zeros(x.size(1), self.d_model // 2, 2)
         position = torch.arange(0, x.size(1), dtype=torch.float32).unsqueeze(1)
         div_term = torch.exp(
             torch.arange(0, self.d_model, 2, dtype=torch.float32)
@@ -68,6 +69,7 @@ class RelPositionalEncoding(torch.nn.Module):
             pe.size(1) // 2 - x.size(1) + 1 : pe.size(1) // 2 + x.size(1),
         ]
         return self.dropout(x), self.dropout(pos_emb)
+
 
 def make_pad_mask(lengths: Tensor):
     bs = lengths.shape[0]
@@ -133,15 +135,20 @@ class WrapperYukarinSosoa(nn.Module):
         output2 = output1 + self.postnet(output1.transpose(1, 2)).transpose(1, 2)
         return output2[0]
 
+
 def make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir: Path, device) -> nn.Module:
     with yukarin_sosoa_model_dir.joinpath("config.yaml").open() as f:
         config = Config.from_dict(yaml.safe_load(f))
 
     predictor = create_predictor(config.network)
     pe = predictor.encoder.embed[-1]
-    predictor.encoder.embed[-1] = RelPositionalEncoding(pe.d_model, pe.dropout.p) # Use my dynamic positional encoding version
+    predictor.encoder.embed[-1] = RelPositionalEncoding(
+        pe.d_model, pe.dropout.p
+    )  # Use my dynamic positional encoding version
     state_dict = torch.load(
-        yukarin_sosoa_model_dir.joinpath("model.pth"), map_location=device
+        # yukarin_sosoa_model_dir.joinpath("model.pth"),
+        yukarin_sosoa_model_dir.joinpath("hoge.pt"),
+        map_location=device,
     )
     predictor.load_state_dict(state_dict)
     predictor.eval().to(device)
@@ -149,8 +156,11 @@ def make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir: Path, device) -> nn.Modu
     print("yukarin_sosoa loaded!")
     return WrapperYukarinSosoa(predictor)
 
+
 def make_yukarin_sosoa_forwarder(yukarin_sosoa_model_dir: Path, device):
-    yukarin_sosoa_forwarder = make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir, device)
+    yukarin_sosoa_forwarder = make_yukarin_sosoa_wrapper(
+        yukarin_sosoa_model_dir, device
+    )
 
     def _dispatcher(
         f0: Tensor,
