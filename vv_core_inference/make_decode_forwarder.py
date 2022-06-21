@@ -9,6 +9,7 @@ from torch import nn
 
 from vv_core_inference.make_yukarin_sosoa_forwarder import make_yukarin_sosoa_wrapper
 from vv_core_inference.utility import to_tensor, OPSET
+from vv_core_inference.surgeon import surgeon
 
 
 class AttrDict(dict):
@@ -106,6 +107,8 @@ def make_decode_forwarder(
                     "spec": {0: "length"},
                     "wave": {0: "outlength"}
                 })
+            fname = str(hifigan_model_dir.joinpath("hifigan.onnx"))
+            surgeon(fname, fname)
             print("decode/hifigan has been converted to ONNX")
         return wave.cpu().numpy()
 

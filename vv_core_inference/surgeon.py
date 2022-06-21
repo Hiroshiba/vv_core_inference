@@ -71,7 +71,7 @@ def replace_Conv(self, node):
     return self.layer(op="Squeeze", inputs=[h2], outputs=[out_tensor], attrs={"axes": [-1]})
 
 
-def surgeon(filename):
+def surgeon(filename, outname):
     graph = gs.import_onnx(onnx.load(filename))
     targets = [node for node in graph.nodes if node.op == "ConvTranspose"]
     for node in targets:
@@ -81,7 +81,7 @@ def surgeon(filename):
     for node in targets:
         graph.replace_Conv(node)
     graph.cleanup().toposort()
-    onnx.save(gs.export_onnx(graph), "model/hifigan/hifigan_modified.onnx")
-    # onnx.save(gs.export_onnx(graph), "../vv_check_web/public/hifigan.onnx")
+    onnx.save(gs.export_onnx(graph), outname)
 
-surgeon("model/hifigan/hifigan.onnx")
+# surgeon("model/hifigan/hifigan.onnx", "model/hifigan/hifigan_modified.onnx")
+# surgeon("model/hifigan/hifigan.onnx", "../vv_check_web/public/hifigan.onnx")
