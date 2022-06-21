@@ -6,7 +6,8 @@ from numpy import ndarray
 import onnxruntime
 
 def make_decode_forwarder(yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path, device, convert=False):
-    session = onnxruntime.InferenceSession(str(yukarin_sosoa_model_dir.joinpath("decode.onnx")))
+    session_sosoa = onnxruntime.InferenceSession(str(yukarin_sosoa_model_dir.joinpath("yukarin_sosoa.onnx")))
+    session_hifi = onnxruntime.InferenceSession(str(hifigan_model_dir.joinpath("hifigan_modified.onnx")))
 
     def _dispatcher(
         length: int,
@@ -20,9 +21,12 @@ def make_decode_forwarder(yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path
         if speaker_id is not None:
             speaker_id = np.asarray(speaker_id)
             speaker_id = speaker_id.reshape((1,)).astype(np.int64)
-        return session.run(["wave"], {
+        spec = session_sosoa.run(["spec"], {
             "f0": f0,
             "phoneme": phoneme,
             "speaker_id": speaker_id,
+        })[0]
+        return session_hifi.run(["wave"], {
+            "spec": spec,
         })[0]
     return _dispatcher
