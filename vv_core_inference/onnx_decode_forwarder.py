@@ -7,7 +7,7 @@ import onnxruntime
 
 def make_decode_forwarder(yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path, device, convert=False):
     session_sosoa = onnxruntime.InferenceSession(str(yukarin_sosoa_model_dir.joinpath("yukarin_sosoa.onnx")))
-    session_hifi = onnxruntime.InferenceSession(str(hifigan_model_dir.joinpath("hifigan_modified.onnx")))
+    session_hifi = onnxruntime.InferenceSession(str(hifigan_model_dir.joinpath("hifigan.onnx")))
 
     def _dispatcher(
         length: int,

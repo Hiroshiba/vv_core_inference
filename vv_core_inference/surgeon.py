@@ -29,13 +29,8 @@ def replace_ConvTranspose(self, node):
     weight_numpy = weight.values
     weight_numpy_conv = np.ascontiguousarray(weight_numpy.transpose(1,0,2)[:,:,::-1])
 
-    # h1 = self.layer(op="Unsqueeze", inputs=[in_tensor, np.array([-1], np.int64)], outputs=["expanded"], attrs={"axes": [-1]})[0]
     h1 = self.layer(op="Unsqueeze", inputs=[in_tensor], outputs=["expanded"], attrs={"axes": [-1]})[0]
     h2 = self.layer(op="Pad", inputs=[h1, [0, 0, 0, 0, 0, 0, 0, stride-1]], outputs=["pad_inner"])[0]
-    # shape = self.layer(op="Shape", inputs=[h2], outputs=["shape"])[0]
-    # shape_0_2 = self.layer(op="Slice", inputs=[shape, [0], [2]], outputs=["shape_slice"])[0]
-    # shape_flatten = self.layer(op="Concat", inputs=[shape_0_2, np.array([-1], np.int64)], outputs=["shape_flatten"], attrs={"axis": 0})[0]
-    # h3 = self.layer(op="Reshape", inputs=[h2, shape_flatten], outputs=["unpooled"])[0]
     h3 = self.layer(op="Reshape", inputs=[h2, [0, 0, -1]], outputs=["unpooled"])[0]
     h4 = self.layer(op="Pad", inputs=[h3, np.array([0, 0, kernel_size - padding - 1, 0, 0, kernel_size - padding - stride], np.int64)], outputs=["pad_outer"])[0]
     return self.layer(op="Conv", inputs=[h4, weight_numpy_conv, bias.values], outputs=[out_tensor], attrs={
