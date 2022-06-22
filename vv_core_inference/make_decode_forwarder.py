@@ -9,6 +9,7 @@ from torch import nn
 
 from vv_core_inference.make_yukarin_sosoa_forwarder import make_yukarin_sosoa_wrapper
 from vv_core_inference.utility import to_tensor, OPSET
+from vv_core_inference.surgeon import surgeon
 
 
 class AttrDict(dict):
@@ -17,32 +18,36 @@ class AttrDict(dict):
         self.__dict__ = self
 
 
-class WrapperDecodeForwarder(nn.Module):
+class WrapperHifiGan(nn.Module):
     def __init__(
         self,
-        yukarin_sosoa_forwarder: nn.Module,
         hifi_gan_forwarder: nn.Module,
     ):
         super().__init__()
-        self.yukarin_sosoa_forwarder = yukarin_sosoa_forwarder
         self.hifi_gan_forwarder = hifi_gan_forwarder
-
+    
     @torch.no_grad()
     def forward(
         self,
-        f0: torch.Tensor,
-        phoneme: torch.Tensor,
-        speaker_id: torch.Tensor,
+        spec: torch.Tensor,
     ):
-        # forward sosoa
-        spec = self.yukarin_sosoa_forwarder(
-            f0=f0, phoneme=phoneme, speaker_id=speaker_id
-        )
-
         # forward hifi gan
         x = spec.transpose(1, 0)
         wave = self.hifi_gan_forwarder(x.unsqueeze(0))[0, 0]
         return wave
+
+def make_hifi_gan_wrapper(hifigan_model_dir: Path, device) -> nn.Module:
+    config = AttrDict(json.load(hifigan_model_dir.joinpath("config.json").open()))
+    predictor = HifiGanPredictor(config).to(device)
+    checkpoint_dict = torch.load(
+        hifigan_model_dir.joinpath("model.pth"),
+        map_location=device,
+    )
+    predictor.load_state_dict(checkpoint_dict["generator"])
+    predictor.eval()
+    predictor.remove_weight_norm()
+    print("hifi-gan loaded!")
+    return WrapperHifiGan(predictor)
 
 
 def make_decode_forwarder(
@@ -54,23 +59,8 @@ def make_decode_forwarder(
     )
 
     # hifi-gan
-    vocoder_model_config = AttrDict(
-        json.loads((hifigan_model_dir / "config.json").read_text())
-    )
-
-    hifi_gan_predictor = HifiGanPredictor(vocoder_model_config).to(device)
-    checkpoint_dict = torch.load(
-        hifigan_model_dir.joinpath("model.pth"),
-        map_location=device,
-    )
-    hifi_gan_predictor.load_state_dict(checkpoint_dict["generator"])
-    hifi_gan_predictor.eval()
-    hifi_gan_predictor.remove_weight_norm()
-    print("hifi-gan loaded!")
-
-    decode_forwarder = WrapperDecodeForwarder(
-        yukarin_sosoa_forwarder=yukarin_sosoa_wrapper,
-        hifi_gan_forwarder=hifi_gan_predictor,
+    hifi_gan_wrapper = make_hifi_gan_wrapper(
+        hifigan_model_dir=hifigan_model_dir, device=device
     )
 
     def _dispatcher(
@@ -84,21 +74,42 @@ def make_decode_forwarder(
         phoneme = to_tensor(phoneme, device=device)
         if speaker_id is not None:
             speaker_id = to_tensor(speaker_id, device=device)
+
+        spec = yukarin_sosoa_wrapper(
+            f0=f0, phoneme=phoneme, speaker_id=speaker_id
+        )
+        wave = hifi_gan_wrapper(spec)
+
         if convert:
             torch.onnx.export(
-                decode_forwarder,
+                yukarin_sosoa_wrapper,
                 (f0, phoneme, speaker_id),
-                yukarin_sosoa_model_dir.joinpath("decode.onnx"),
+                yukarin_sosoa_model_dir.joinpath("yukarin_sosoa.onnx"),
                 opset_version=OPSET,
                 do_constant_folding=True,
                 input_names=["f0", "phoneme", "speaker_id"],
-                output_names=["wave"],
+                output_names=["spec"],
                 dynamic_axes={
                     "f0": {0: "length"},
                     "phoneme": {0: "length"},
+                    "spec": {0: "length"}
+                })
+            print("decode/yukarin_sosoa has been converted to ONNX")
+            torch.onnx.export(
+                hifi_gan_wrapper,
+                (spec,),
+                hifigan_model_dir.joinpath("hifigan.onnx"),
+                opset_version=OPSET,
+                do_constant_folding=True,
+                input_names=["spec"],
+                output_names=["wave"],
+                dynamic_axes={
+                    "spec": {0: "length"},
                     "wave": {0: "outlength"}
                 })
-            print("decode has been converted to ONNX")
-        return decode_forwarder(f0, phoneme, speaker_id).cpu().numpy()
+            fname = str(hifigan_model_dir.joinpath("hifigan.onnx"))
+            surgeon(fname, fname)
+            print("decode/hifigan has been converted to ONNX")
+        return wave.cpu().numpy()
 
     return _dispatcher

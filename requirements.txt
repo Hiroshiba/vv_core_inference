@@ -13,3 +13,6 @@ git+https://github.com/Hiroshiba/pyopenjtalk@69e5f354634f98098113f9cac5a6ea73644
 onnx
 typer<0.4
 colorlog==4.7.2
+
+--extra-index-url https://pypi.ngc.nvidia.com
+onnx_graphsurgeon
