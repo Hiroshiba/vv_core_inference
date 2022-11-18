@@ -131,6 +131,7 @@ class WrapperYukarinSosoa(nn.Module):
         output1 = self.post(h)
         output2 = output1 + self.postnet(output1.transpose(1, 2)).transpose(1, 2)
         return output2[0]
+        
 
 def make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir: Path, device) -> nn.Module:
     with yukarin_sosoa_model_dir.joinpath("config.yaml").open() as f:

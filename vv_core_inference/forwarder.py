@@ -41,9 +41,11 @@ class Forwarder:
         self.yukarin_soso_phoneme_class = OjtPhoneme
 
     def forward(
-        self, text: str, speaker_id: int, f0_speaker_id: int, f0_correct: float = 0
+        self, text: str, speaker_id: int, f0_speaker_id: int, f0_correct: float = 0,
+        return_intermediate_results: bool = False
     ):
         rate = 200
+        intermediate_results = {}
 
         # phoneme
         utterance = extract_full_context_label(text)
@@ -101,11 +103,13 @@ class Forwarder:
             [p.phoneme_id for p in phoneme_data_list], dtype=numpy.int64
         )
 
-        phoneme_length = self.yukarin_s_forwarder(
-            length=len(phoneme_list_s),
-            phoneme_list=numpy.ascontiguousarray(phoneme_list_s),
-            speaker_id=numpy.array(f0_speaker_id, dtype=numpy.int64).reshape(-1),
-        )
+        yukarin_s_input = {
+            "length": len(phoneme_list_s),
+            "phoneme_list": numpy.ascontiguousarray(phoneme_list_s),
+            "speaker_id": numpy.array(f0_speaker_id, dtype=numpy.int64).reshape(-1)
+        }
+        intermediate_results["yukarin_s_input"] = yukarin_s_input
+        phoneme_length = self.yukarin_s_forwarder(**yukarin_s_input)
         phoneme_length[0] = phoneme_length[-1] = 0.1
         phoneme_length = numpy.round(phoneme_length * rate) / rate
 
@@ -133,16 +137,18 @@ class Forwarder:
             dtype=numpy.float32,
         )
 
-        f0_list = self.yukarin_sa_forwarder(
-            length=vowel_phoneme_list.shape[0],
-            vowel_phoneme_list=vowel_phoneme_list,
-            consonant_phoneme_list=consonant_phoneme_list,
-            start_accent_list=start_accent_list[vowel_indexes],
-            end_accent_list=end_accent_list[vowel_indexes],
-            start_accent_phrase_list=start_accent_phrase_list[vowel_indexes],
-            end_accent_phrase_list=end_accent_phrase_list[vowel_indexes],
-            speaker_id=numpy.array(speaker_id, dtype=numpy.int64).reshape(-1),
-        )
+        yukarin_sa_input = {
+            "length": vowel_phoneme_list.shape[0],
+            "vowel_phoneme_list": vowel_phoneme_list,
+            "consonant_phoneme_list": consonant_phoneme_list,
+            "start_accent_list": start_accent_list[vowel_indexes],
+            "end_accent_list": end_accent_list[vowel_indexes],
+            "start_accent_phrase_list": start_accent_phrase_list[vowel_indexes],
+            "end_accent_phrase_list": end_accent_phrase_list[vowel_indexes],
+            "speaker_id": numpy.array(speaker_id, dtype=numpy.int64).reshape(-1),
+        }
+        intermediate_results["yukarin_sa_input"] = yukarin_sa_input
+        f0_list = self.yukarin_sa_forwarder(**yukarin_sa_input)
         f0_list += f0_correct
 
         for i, p in enumerate(vowel_phoneme_data_list):
@@ -183,11 +189,21 @@ class Forwarder:
         f0 = SamplingData(array=f0, rate=rate).resample(24000 / 256)
         phoneme = SamplingData(array=phoneme, rate=rate).resample(24000 / 256)
 
-        wave = self.decode_forwarder(
-            length=phoneme.shape[0],
-            phoneme_size=phoneme.shape[1],
-            f0=f0[:, numpy.newaxis],
-            phoneme=phoneme,
-            speaker_id=numpy.array(speaker_id, dtype=numpy.int64).reshape(-1),
-        )
-        return wave
+        decode_input = {
+            "length": phoneme.shape[0],
+            "phoneme_size": phoneme.shape[1],
+            "f0": f0[:, numpy.newaxis],
+            "phoneme": phoneme,
+            "speaker_id": numpy.array(speaker_id, dtype=numpy.int64).reshape(-1),
+        }
+        intermediate_results["yukarin_sosoa_input"] = {
+            "f0": decode_input["f0"],
+            "phoneme": decode_input["phoneme"],
+            "speaker_id": decode_input["speaker_id"]
+        }
+        spec, wave = self.decode_forwarder(**decode_input)
+        intermediate_results["hifigan_input"] = spec
+        if return_intermediate_results:
+            return wave, intermediate_results
+        else:
+            return wave
