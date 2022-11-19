@@ -6,6 +6,7 @@ from typing import List
 import torch
 import onnx
 import onnx.helper
+import onnx.compose
 import yaml
 
 from vv_core_inference.utility import to_tensor, OPSET
@@ -148,6 +149,7 @@ def convert_spectrogram(model_dir: Path, device: str, offset: int, working_dir: 
         dynamic_axes={
             "f0": {0: "length"},
             "phoneme": {0: "length"},
+            "spec": {0: "row", 1: "col"}
         }
     )
     return outpath, size
@@ -361,12 +363,25 @@ def concat(onnx_list: List[Path], offsets: List[int]):
     onnx.checker.check_model(whole_model)
     onnx.save(whole_model, output_onnx_path)
     logger.info(f"saved {output_onnx_path}")
+    return output_onnx_path
 
 
 def fuse(onnx1: Path, onnx2: Path):
     # you can use onnx.compose.merge_models
     # https://github.com/onnx/onnx/blob/main/docs/PythonAPIOverview.md#onnx-compose
-    raise NotImplementedError
+    logger = logging.getLogger("fuse")
+    model1 = onnx.load(onnx1)
+    model2 = onnx.load(onnx2)
+    opset = model1.opset_import[0].version
+    logger.info("opset: %d" % opset)
+
+    merged_graph = onnx.compose.merge_graphs(model1.graph, model2.graph, [("spec", "spec")])
+    merged = onnx.helper.make_model(merged_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)])
+    logger.info(f"fused {onnx1} and {onnx2}")
+    output_onnx_path = onnx1.parent / "decode.onnx"
+    onnx.checker.check_model(merged)
+    onnx.save(merged, output_onnx_path)
+    logger.info(f"saved {output_onnx_path}")
 
 def run(
     yukarin_s_model_dir: List[Path],
@@ -439,7 +454,7 @@ def run(
     duration_merged_onnx = concat(duration_onnx_list, offsets)
     intonation_merged_onnx = concat(intonation_onnx_list, offsets)
     spectrogram_merged_onnx = concat(spectrogram_onnx_list, offsets)
-    # decoder_onnx = fuse(spectrogram_merged_onnx, vocoder_onnx)
+    decoder_onnx = fuse(spectrogram_merged_onnx, vocoder_onnx)
     logger.info("--- DONE! ---")
 
 
