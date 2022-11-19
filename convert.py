@@ -289,17 +289,6 @@ def concat(onnx_list: List[Path], offsets: List[int]):
             data_type=onnx.TensorProto.INT64,
             dims=(),
             vals=[offset]))
-        # offset_consts.append(onnx.helper.make_node(
-        #     "Constant",
-        #     inputs=[],
-        #     outputs=[f"offset_{i}"],
-        #     value=onnx.helper.make_tensor(
-        #         name=f"const_offset_{i}",
-        #         data_type=onnx.TensorProto.INT64,
-        #         dims=(),
-        #         vals=[offset]
-        #     )
-        # ))
 
     for i, model in enumerate(models):
         prefix = f"m{i}."
@@ -355,7 +344,7 @@ def concat(onnx_list: List[Path], offsets: List[int]):
         name="whole_model",
         inputs=input_nodes,
         outputs=output_nodes,
-        initializer=offset_consts[:-1]# + sum([list(m.graph.initializer) for m in models], []),
+        initializer=offset_consts[:-1]
     )
     whole_model = onnx.helper.make_model(whole_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)])
 
