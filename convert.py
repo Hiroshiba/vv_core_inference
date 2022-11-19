@@ -1,10 +1,11 @@
 import argparse
-import json
 import logging
 from pathlib import Path
 from typing import List
 
 import torch
+import onnx
+import onnx.helper
 import yaml
 
 from vv_core_inference.utility import to_tensor, OPSET
@@ -216,9 +217,155 @@ def get_sample_inputs(
 
 
 def concat(onnx_list: List[Path], offsets: List[int]):
-    raise NotImplementedError
+    """
+    goal is outputing an onnx equivalent to:
+    
+    def merged_model(speaker_id, **kwargs):
+        if speaker_id < offset[1]:
+            y = model[0](speaker_id - offset[0], **kwargs)
+        else:
+            if speaker_id < offset[2]:
+                y = model[1](speaker_id - offset[1], **kwargs)
+            else:
+                if ...
+        return y
+    """
+    logger = logging.getLogger("concat")
+    models = [onnx.load(path) for path in onnx_list]
+    logger.info("loaded models:")
+    for path in onnx_list:
+        logger.info(f"* {path}")
+
+    opset = models[0].opset_import[0].version
+    logger.info("opset: %d" % opset)
+
+    # io name/nodes to be shared
+    input_names = []
+    input_nodes = []
+    output_names = []
+    output_nodes = []
+    logger.info("input names:")
+    for node in models[0].graph.input:
+        logger.info(f"* {node.name}")
+        input_names.append(node.name)
+        input_nodes.append(node)
+
+    assert "speaker_id" in input_names
+    input_names.remove("speaker_id") # speaker_id input is not shared
+
+    logger.info("output names:")
+    for node in models[0].graph.output:
+        logger.info(f"* {node.name}")
+        output_names.append(node.name)
+        output_nodes.append(node)
+
+    def rename(graph, prefix: str, freeze_names: List[str]):
+        for node in graph.node:
+            for i, n in enumerate(node.input):
+                if n not in freeze_names and n != "":
+                    node.input[i] = prefix + n
+            node.name = prefix + node.name
+            if node.op_type == "Loop":
+                for attr in node.attribute:
+                    if attr.name == "body":
+                        for subnode in attr.g.input:
+                            subnode.name = prefix + subnode.name
+                        for subnode in attr.g.output:
+                            subnode.name = prefix + subnode.name
+                        rename(attr.g, prefix, freeze_names)
+                print(node)
+            for i, n in enumerate(node.output):
+                if n not in freeze_names and n != "":
+                    node.output[i] = prefix + n
+        for init in graph.initializer:
+            init.name = prefix + init.name
+
+    offset_consts = []
+    for i, offset in enumerate(offsets):
+        offset_consts.append(onnx.helper.make_tensor(
+            name=f"offset_{i}",
+            data_type=onnx.TensorProto.INT64,
+            dims=(),
+            vals=[offset]))
+        # offset_consts.append(onnx.helper.make_node(
+        #     "Constant",
+        #     inputs=[],
+        #     outputs=[f"offset_{i}"],
+        #     value=onnx.helper.make_tensor(
+        #         name=f"const_offset_{i}",
+        #         data_type=onnx.TensorProto.INT64,
+        #         dims=(),
+        #         vals=[offset]
+        #     )
+        # ))
+
+    for i, model in enumerate(models):
+        prefix = f"m{i}."
+        rename(model.graph, prefix, input_names + output_names) # all submodules share inputs and outputs.
+ 
+    select_conds = []
+    shifted_speaker_ids = []
+    for i, model in enumerate(models):
+        prefix = f"m{i}."
+        speaker_offset = offset_consts[i]
+        speaker_end = offset_consts[i+1]
+        select_conds.append(onnx.helper.make_node(
+            "Less",
+            inputs=["speaker_id", speaker_end.name],
+            outputs=[f"select_cond_{i}"]
+        ))
+        shifted_speaker_ids.append(onnx.helper.make_node(
+            "Sub",
+            inputs=["speaker_id", speaker_offset.name],
+            outputs=[prefix + "speaker_id"]
+        ))
+
+    branches = []
+    for i, m in enumerate(models):
+        branches.append(onnx.helper.make_graph(
+            nodes=[shifted_speaker_ids[i]] + list(m.graph.node),
+            name=f"branch_m{i}",
+            inputs=[],
+            outputs=output_nodes,
+            initializer=list(m.graph.initializer) + [offset_consts[i]]
+        ))
+    
+    whole_graph = branches[-1]
+    for i in range(len(branches)-2, -1, -1):
+        if_node = onnx.helper.make_node(
+            "If",
+            inputs=[f"select_cond_{i}"],
+            outputs=output_names,
+            then_branch=branches[i],
+            else_branch=whole_graph
+        )
+        # logger.info(f"else: {whole_graph.node}")
+        whole_graph = onnx.helper.make_graph(
+            nodes=[select_conds[i], if_node],
+            name=f"branch{i}",
+            inputs=[],
+            outputs=output_nodes,
+            initializer=[offset_consts[i+1]]
+        )
+
+    whole_graph = onnx.helper.make_graph(
+        nodes=list(whole_graph.node),
+        name="whole_model",
+        inputs=input_nodes,
+        outputs=output_nodes,
+        initializer=offset_consts[:-1]# + sum([list(m.graph.initializer) for m in models], []),
+    )
+    whole_model = onnx.helper.make_model(whole_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)])
+
+    output_onnx_path = onnx_list[0].parent / (onnx_list[0].stem[:-4] + ".onnx")
+    onnx.checker.check_model(whole_model)
+    onnx.save(whole_model, output_onnx_path)
+    logger.info(f"saved {output_onnx_path}")
+
 
 def fuse(onnx1: Path, onnx2: Path):
+    # you can use onnx.compose.merge_models
+    # https://github.com/onnx/onnx/blob/main/docs/PythonAPIOverview.md#onnx-compose
     raise NotImplementedError
 
 def run(
@@ -281,8 +428,9 @@ def run(
 
         assert duration_size == intonation_size
         assert duration_size == spec_size
-        offsets.append(duration_size)
+        offsets.append(offsets[-1] + duration_size)
     
+    logger.info(f"collected offsets: {offsets}")
     logger.info(f"[###] Start converting vocoder model: {hifigan_model_dir}")
     vocoder_onnx = convert_vocoder(hifigan_model_dir, device, working_dir, sample_inputs["hifigan_input"])
     logger.info("vocoder model DONE")
@@ -291,7 +439,7 @@ def run(
     duration_merged_onnx = concat(duration_onnx_list, offsets)
     intonation_merged_onnx = concat(intonation_onnx_list, offsets)
     spectrogram_merged_onnx = concat(spectrogram_onnx_list, offsets)
-    decoder_onnx = fuse(spectrogram_merged_onnx, vocoder_onnx)
+    # decoder_onnx = fuse(spectrogram_merged_onnx, vocoder_onnx)
     logger.info("--- DONE! ---")
 
 

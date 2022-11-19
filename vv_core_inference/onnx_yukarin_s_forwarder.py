@@ -6,7 +6,7 @@ from numpy import ndarray
 import onnxruntime
 
 def make_yukarin_s_forwarder(yukarin_s_model_dir: Path, device, convert=False):
-    session = onnxruntime.InferenceSession(str(yukarin_s_model_dir.joinpath("yukarin_s.onnx")))
+    session = onnxruntime.InferenceSession(str(yukarin_s_model_dir.joinpath("duration.onnx")))
 
     def _dispatcher(length: int, phoneme_list: ndarray, speaker_id: Optional[ndarray]):
         phoneme_list = np.asarray(phoneme_list)
