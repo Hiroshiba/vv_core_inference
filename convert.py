@@ -275,7 +275,6 @@ def concat(onnx_list: List[Path], offsets: List[int]):
                         for subnode in attr.g.output:
                             subnode.name = prefix + subnode.name
                         rename(attr.g, prefix, freeze_names)
-                print(node)
             for i, n in enumerate(node.output):
                 if n not in freeze_names and n != "":
                     node.output[i] = prefix + n
