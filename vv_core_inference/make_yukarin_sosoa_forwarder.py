@@ -66,7 +66,7 @@ class RelPositionalEncoding(torch.nn.Module):
             :,
             pe.size(1) // 2 - x.size(1) + 1 : pe.size(1) // 2 + x.size(1),
         ]
-        return self.dropout(x), self.dropout(pos_emb)
+        return self.dropout(x), self.dropout(pos_emb.to(x.device))
 
 def make_pad_mask(lengths: Tensor):
     bs = lengths.shape[0]
