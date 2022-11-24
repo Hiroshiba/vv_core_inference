@@ -6,7 +6,13 @@ from numpy import ndarray
 import onnxruntime
 
 def make_yukarin_sa_forwarder(yukarin_sa_model_dir: Path, device, convert=False):
-    session = onnxruntime.InferenceSession(str(yukarin_sa_model_dir.joinpath("intonation.onnx")))
+    providers = ['CPUExecutionProvider']
+    if device == "cuda":
+      providers.insert(0, 'CUDAExecutionProvider')
+    session = onnxruntime.InferenceSession(
+      str(yukarin_sa_model_dir.joinpath("intonation.onnx")),
+      providers=providers
+    )
 
     def _dispatcher(
         length: int,
