@@ -1,3 +1,11 @@
+"""
+Pytorchモデルを読み込んでONNXモデルに変換する。
+モデルを複数指定した場合は、それらを並列に接続し入力によって実行パスが切り替わるモデルが作成される。
+例えば6話者のmodel1と10話者のmodel2が接続された場合は、入力speaker_idが0-5の時はmodel1が、6-15の時はmodel2が動作するONNXモデルが生成される。
+各モデルに含まれている話者数はconfigファイルから推定される。
+複数指定可能なモデルはduration, intonation, spectrogram推定。
+vocoderは並列化することができず、全ての入力パターンに対してモデルが共有される。
+"""
 import argparse
 import logging
 from pathlib import Path
@@ -17,6 +25,7 @@ from vv_core_inference.forwarder import Forwarder
 
 
 def convert_duration(model_dir: Path, device: str, offset: int, working_dir: Path, sample_input):
+    """duration推定モデル(yukarin_s)のONNX変換"""
     from vv_core_inference.make_yukarin_s_forwarder import WrapperYukarinS
     from yukarin_s.config import Config
     from yukarin_s.network.predictor import create_predictor
@@ -56,6 +65,7 @@ def convert_duration(model_dir: Path, device: str, offset: int, working_dir: Pat
 
 
 def convert_intonation(model_dir: Path, device: str, offset: int, working_dir: Path, sample_input):
+    """intonation推定モデル(yukarin_sa)のONNX変換"""
     from vv_core_inference.make_yukarin_sa_forwarder import WrapperYukarinSa
     from yukarin_sa.config import Config
     from yukarin_sa.network.predictor import create_predictor
@@ -120,6 +130,7 @@ def convert_intonation(model_dir: Path, device: str, offset: int, working_dir: P
     return outpath, size
 
 def convert_spectrogram(model_dir: Path, device: str, offset: int, working_dir: Path, sample_input):
+    """spectrogram推定モデル(decodeの前半, yukarin_sosoa)のONNX変換"""
     from vv_core_inference.make_yukarin_sosoa_forwarder import make_yukarin_sosoa_wrapper
 
     logger = logging.getLogger("spectrogram")
@@ -155,6 +166,7 @@ def convert_spectrogram(model_dir: Path, device: str, offset: int, working_dir: 
     return outpath, size
 
 def convert_vocoder(model_dir: Path, device: str, working_dir: Path, sample_input):
+    """vocoder(decodeの後半, hifi_gan)のONNX変換"""
     from vv_core_inference.make_decode_forwarder import make_hifigan_wrapper
 
     logger = logging.getLogger("vocoder")
@@ -185,6 +197,7 @@ def get_sample_inputs(
     sample_speaker: int,
     device: str
 ):
+    """ONNX変換に必要な中間表現を収集する"""
     # yukarin_s
     yukarin_s_forwarder = make_yukarin_s_forwarder(
         yukarin_s_model_dir=yukarin_s_model_dir, device=device
@@ -220,6 +233,10 @@ def get_sample_inputs(
 
 def concat(onnx_list: List[Path], offsets: List[int]):
     """
+    複数のONNXモデル model[:] を並列に接続し、
+    入力されるspeaker_idがどのoffsetに含まれるかによって実行パスが変わるONNXモデルを再生成する。
+    ONNX上ではモデルiのノードXはm{i}.Xにリネームされ、上流のIFノードによって実行パスが変化する。
+
     goal is outputing an onnx equivalent to:
     
     def merged_model(speaker_id, **kwargs):
@@ -355,6 +372,7 @@ def concat(onnx_list: List[Path], offsets: List[int]):
 
 
 def fuse(onnx1: Path, onnx2: Path):
+    """ふたつのONNXモデルを直列に接続する。spectrogramとvocoderを接続するために利用する。"""
     # you can use onnx.compose.merge_models
     # https://github.com/onnx/onnx/blob/main/docs/PythonAPIOverview.md#onnx-compose
     logger = logging.getLogger("fuse")
