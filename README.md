@@ -53,16 +53,17 @@ Cyhton が便利です。
 5. import して[このように](https://github.com/Hiroshiba/voicevox_core/blob/f4844efc65b1a4875442091955af84f671e16887/example/python/run.py#L21-L25)つなぎこむ
 
 ## モデルをonnxに変換
-* `python run.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"  --speaker_ids 5  --method=convert` でonnxへの変換が可能。modelフォルダ内のyukarin_s, yukarin_sa, yukarin_sosoaフォルダにonnxが保存される。
+* `python convert.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"` でonnxへの変換が可能。modelフォルダ内のyukarin_s, yukarin_sa, yukarin_sosoaフォルダにonnxが保存される。
   - `speaker_ids`オプションに指定する数値は自由。どの数値を指定しても生成されるonnxモデルは全ての`speaker_id`に対応しており、値を変えて実行しなおしたり、複数のidを指定したりする必要は無い。
   - yukarin_sosoaフォルダにはhifi_ganと合わせた`decode.onnx`が保存される
 
-* onnxで実行したい場合は`--method=onnx`とする； `python run.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"  --speaker_ids 5  --method=onnx`
+* onnxで実行したい場合は`run.py`を`--method=onnx`で実行する； `python run.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"  --speaker_ids 5  --method=onnx`
   - `speaker_ids`に複数の数値を指定すれば、通常実行と同様に各話者の音声が保存される。
 
 ## ファイル構造
 
-- `run.py` ･･･ エントリーポイント
+- `run.py` ･･･ 音声合成のためのエントリーポイント
+- `convert.py` ･･･ モデル変換のためのエントリーポイント
 - `vv_core_inference` ･･･ いろいろな処理
   - `forwarder.py`
     - VOICEVOX と同じインターフェースと処理。
