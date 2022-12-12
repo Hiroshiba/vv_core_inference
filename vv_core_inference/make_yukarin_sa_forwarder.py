@@ -105,7 +105,7 @@ class WrapperYukarinSa(nn.Module):
         return torch.stack(f0, dim=1)[0]  # (length,)
 
 
-def make_yukarin_sa_forwarder(yukarin_sa_model_dir: Path, device, convert=False):
+def make_yukarin_sa_forwarder(yukarin_sa_model_dir: Path, device):
     with yukarin_sa_model_dir.joinpath("config.yaml").open() as f:
         config = Config.from_dict(yaml.safe_load(f))
 
@@ -154,34 +154,6 @@ def make_yukarin_sa_forwarder(yukarin_sa_model_dir: Path, device, convert=False)
             speaker_id,
         )
         output = wrapper(*args)
-        if convert:
-            torch.onnx.export(
-                torch.jit.script(wrapper),
-                args,
-                yukarin_sa_model_dir.joinpath("yukarin_sa.onnx"),
-                opset_version=OPSET,
-                do_constant_folding=True,
-                input_names=[
-                    "length",
-                    "vowel_phoneme_list",
-                    "consonant_phoneme_list",
-                    "start_accent_list",
-                    "end_accent_list",
-                    "start_accent_phrase_list",
-                    "end_accent_phrase_list",
-                    "speaker_id",
-                ],
-                output_names=["f0_list"],
-                dynamic_axes={
-                    "vowel_phoneme_list": {0: "length"},
-                    "consonant_phoneme_list": {0: "length"},
-                    "start_accent_list": {0: "length"},
-                    "end_accent_list": {0: "length"},
-                    "start_accent_phrase_list": {0: "length"},
-                    "end_accent_phrase_list": {0: "length"},
-                    "f0_list": {0: "length"}},
-                example_outputs=output)
-            print("yukarin_sa has been converted to ONNX")
         return output.cpu().numpy()
     return _dispatcher
 

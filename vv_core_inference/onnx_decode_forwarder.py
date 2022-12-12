@@ -6,7 +6,13 @@ from numpy import ndarray
 import onnxruntime
 
 def make_decode_forwarder(yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path, device, convert=False):
-    session = onnxruntime.InferenceSession(str(yukarin_sosoa_model_dir.joinpath("decode.onnx")))
+    providers = ['CPUExecutionProvider']
+    if device == "cuda":
+      providers.insert(0, 'CUDAExecutionProvider')
+    session = onnxruntime.InferenceSession(
+      str(yukarin_sosoa_model_dir.joinpath("decode.onnx")),
+      providers=providers
+    )
 
     def _dispatcher(
         length: int,
@@ -20,9 +26,10 @@ def make_decode_forwarder(yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path
         if speaker_id is not None:
             speaker_id = np.asarray(speaker_id)
             speaker_id = speaker_id.reshape((1,)).astype(np.int64)
-        return session.run(["wave"], {
+        wave = session.run(["wave"], {
             "f0": f0,
             "phoneme": phoneme,
             "speaker_id": speaker_id,
         })[0]
+        return None, wave
     return _dispatcher

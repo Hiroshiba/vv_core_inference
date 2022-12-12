@@ -18,7 +18,7 @@ def run(
     method: str,
 ):
     device = "cuda" if use_gpu else "cpu"
-    if method == "torch" or method == "convert":
+    if method == "torch":
         from vv_core_inference.make_decode_forwarder import make_decode_forwarder
         from vv_core_inference.make_yukarin_s_forwarder import make_yukarin_s_forwarder
         from vv_core_inference.make_yukarin_sa_forwarder import make_yukarin_sa_forwarder
@@ -30,16 +30,14 @@ def run(
         if use_gpu:
             assert onnxruntime.get_device() == "GPU", "Install onnxruntime-gpu if you want to use GPU."
 
-    convert = (method == "convert")
-
     # yukarin_s
     yukarin_s_forwarder = make_yukarin_s_forwarder(
-        yukarin_s_model_dir=yukarin_s_model_dir, device=device, convert=convert
+        yukarin_s_model_dir=yukarin_s_model_dir, device=device
     )
 
     # yukarin_sa
     yukarin_sa_forwarder = make_yukarin_sa_forwarder(
-        yukarin_sa_model_dir=yukarin_sa_model_dir, device=device, convert=convert
+        yukarin_sa_model_dir=yukarin_sa_model_dir, device=device
     )
 
     # decoder
@@ -47,7 +45,6 @@ def run(
         yukarin_sosoa_model_dir=yukarin_sosoa_model_dir,
         hifigan_model_dir=hifigan_model_dir,
         device=device,
-        convert=convert
     )
 
     # Forwarder。このForwarderクラスの中を書き換えずに
@@ -65,9 +62,6 @@ def run(
         if method == "torch" or method == "onnx":
             soundfile.write(f"{method}-{text}-{speaker_id}.wav", data=wave, samplerate=24000)
 
-        if convert:
-            break
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -84,5 +78,5 @@ if __name__ == "__main__":
     parser.add_argument("--use_gpu", action="store_true")
     parser.add_argument("--texts", nargs="+", default=["こんにちは、どうでしょう"])
     parser.add_argument("--speaker_ids", nargs="+", type=int, default=[5, 9])
-    parser.add_argument("--method", choices=["torch", "convert", "onnx"], default="torch")
+    parser.add_argument("--method", choices=["torch", "onnx"], default="torch")
     run(**vars(parser.parse_args()))

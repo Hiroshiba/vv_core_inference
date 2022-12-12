@@ -66,7 +66,7 @@ class RelPositionalEncoding(torch.nn.Module):
             :,
             pe.size(1) // 2 - x.size(1) + 1 : pe.size(1) // 2 + x.size(1),
         ]
-        return self.dropout(x), self.dropout(pos_emb)
+        return self.dropout(x), self.dropout(pos_emb.to(x.device))
 
 def make_pad_mask(lengths: Tensor):
     bs = lengths.shape[0]
@@ -131,6 +131,7 @@ class WrapperYukarinSosoa(nn.Module):
         output1 = self.post(h)
         output2 = output1 + self.postnet(output1.transpose(1, 2)).transpose(1, 2)
         return output2[0]
+        
 
 def make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir: Path, device) -> nn.Module:
     with yukarin_sosoa_model_dir.joinpath("config.yaml").open() as f:

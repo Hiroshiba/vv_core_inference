@@ -2,6 +2,7 @@ numpy
 pyyaml
 soundfile
 torch==1.9.0
+onnx
 onnxruntime
 git+https://github.com/Hiroshiba/yukarin_s@416f25603ff353f0691ce19b3a98f69af774a487
 git+https://github.com/Hiroshiba/yukarin_sa@18bbbefaaf49d4f19b77b3a863c33b4bb8afc7cf
