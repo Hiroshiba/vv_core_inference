@@ -457,18 +457,9 @@ def run(
     logger.info("vocoder model DONE")
 
     logger.info("--- concatination ---")
-    if len(duration_onnx_list) > 1:
-        duration_merged_onnx = concat(duration_onnx_list, offsets)
-    else:
-        duration_merged_onnx = duration_onnx_list[0]
-    if len(intonation_onnx_list) > 1:
-        intonation_merged_onnx = concat(intonation_onnx_list, offsets)
-    else:
-        intonation_merged_onnx = intonation_onnx_list[0]
-    if len(spectrogram_onnx_list) > 1:
-        spectrogram_merged_onnx = concat(spectrogram_onnx_list, offsets)
-    else:
-        spectrogram_merged_onnx = spectrogram_onnx_list[0]
+    duration_merged_onnx = concat(duration_onnx_list, offsets)
+    intonation_merged_onnx = concat(intonation_onnx_list, offsets)
+    spectrogram_merged_onnx = concat(spectrogram_onnx_list, offsets)
     decoder_onnx = fuse(spectrogram_merged_onnx, vocoder_onnx)
     logger.info("--- DONE! ---")
 
