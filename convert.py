@@ -360,7 +360,7 @@ def concat(onnx_list: List[Path], offsets: List[int]):
         name="whole_model",
         inputs=input_nodes,
         outputs=output_nodes,
-        initializer=offset_consts[:-1]
+        initializer=list(whole_graph.initializer)
     )
     whole_model = onnx.helper.make_model(whole_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)])
 
