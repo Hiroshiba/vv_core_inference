@@ -15,6 +15,7 @@ import torch
 import onnx
 import onnx.helper
 import onnx.compose
+import onnxruntime
 import yaml
 
 from vv_core_inference.utility import to_tensor, OPSET
@@ -364,7 +365,7 @@ def concat(onnx_list: List[Path], offsets: List[int]):
     )
     whole_model = onnx.helper.make_model(whole_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)])
 
-    output_onnx_path = onnx_list[0].parent / (onnx_list[0].stem[:-4] + ".onnx")
+    output_onnx_path = onnx_list[0].parent / (onnx_list[0].stem[:-4] + "_unopt.onnx")
     onnx.checker.check_model(whole_model)
     onnx.save(whole_model, output_onnx_path)
     logger.info(f"saved {output_onnx_path}")
@@ -384,10 +385,18 @@ def fuse(onnx1: Path, onnx2: Path):
     merged_graph = onnx.compose.merge_graphs(model1.graph, model2.graph, [("spec", "spec")])
     merged = onnx.helper.make_model(merged_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)])
     logger.info(f"fused {onnx1} and {onnx2}")
-    output_onnx_path = onnx1.parent / "decode.onnx"
+    output_onnx_path = onnx1.parent / "decode_unopt.onnx"
     onnx.checker.check_model(merged)
     onnx.save(merged, output_onnx_path)
     logger.info(f"saved {output_onnx_path}")
+    return output_onnx_path
+
+def optim(path: Path, output_path: Path):
+    """ONNX Runtime sessionを作るときに走る最適化を利用する"""
+    sess_options = onnxruntime.SessionOptions()
+    sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
+    sess_options.optimized_model_filepath = str(output_path)
+    session = onnxruntime.InferenceSession(str(path), sess_options)
 
 def run(
     yukarin_s_model_dir: List[Path],
@@ -461,6 +470,10 @@ def run(
     intonation_merged_onnx = concat(intonation_onnx_list, offsets)
     spectrogram_merged_onnx = concat(spectrogram_onnx_list, offsets)
     decoder_onnx = fuse(spectrogram_merged_onnx, vocoder_onnx)
+    logger.info("--- optimization ---")
+    optim(duration_merged_onnx, working_dir / "duration.onnx")
+    optim(intonation_merged_onnx, working_dir / "intonation.onnx")
+    optim(decoder_onnx, working_dir / "decode.onnx")
     logger.info("--- DONE! ---")
 
 
