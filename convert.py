@@ -394,7 +394,7 @@ def fuse(onnx1: Path, onnx2: Path):
 def optim(path: Path, output_path: Path):
     """ONNX Runtime sessionを作るときに走る最適化を利用する"""
     sess_options = onnxruntime.SessionOptions()
-    sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
+    sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_BASIC
     sess_options.optimized_model_filepath = str(output_path)
     session = onnxruntime.InferenceSession(str(path), sess_options)
 
