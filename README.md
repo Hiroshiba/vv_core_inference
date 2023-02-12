@@ -89,3 +89,78 @@ Cyhton が便利です。
     - フルコンテキストラベルの処理が入っている。ディープラーニングとは関係ない。
   - `utility.py`
     - 便利関数が多少ある
+
+## 自分で学習したモデルの onnx を作りたい場合
+
+VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
+
+- predict_duration.onnx
+  - 入力
+    - phoneme_list
+      - shape: [sequence]
+      - dtype: int
+      - 値は音素 id
+    - speaker_id
+      - shape: [1]
+      - dtype: int
+  - 出力
+    - phoneme_length
+      - shape: [sequence]
+      - dtype: float
+      - 値は秒単位の継続長
+- predict_intonation.onnx
+  - 入力
+    - length
+      - shape: int
+      - 値は音素 id
+    - vowel_phoneme_list
+      - shape: [length]
+      - dtype: int
+      - 値は音素 id
+    - consonant_phoneme_list
+      - shape: [length]
+      - dtype: int
+      - 値は音素 id
+    - start_accent_list
+      - shape: [length]
+      - dtype: int
+      - 値は 0 か 1
+    - end_accent_list
+      - shape: [length]
+      - dtype: int
+      - 値は 0 か 1
+    - start_accent_phrase_list
+      - shape: [length]
+      - dtype: int
+      - 値は 0 か 1
+    - end_accent_phrase_list
+      - shape: [length]
+      - dtype: int
+      - 値は 0 か 1
+    - speaker_id
+      - shape: [1]
+      - dtype: int
+  - 出力
+    - f0_list
+      - shape: [sequence]
+      - dtype: float
+- decode.onnx
+  - 入力
+    - f0
+      - shape: [length, 1]
+      - dtype: float
+    - phoneme
+      - shape: [length, vocab_size]
+      - dtype: int
+      - onehot で表現された音素
+    - speaker_id
+      - shape: [1]
+      - dtype: int
+  - 出力
+    - wave
+      - shape: [outlength]
+      - dtype: float
+      - 値は [-1.0, 1.0] の音声波形
+      - サンプリング周波数は 24kHz
+
+音素 id は辞書に依存します。また predict_duration.onnx や predict_intonation.onnx の出力はコアによって変換されて decode.onnx の入力になります。コアを変更しない場合は phoneme_length を元に f0 と phoneme が 93.75(=24k/256)Hz になるように変換されます。
