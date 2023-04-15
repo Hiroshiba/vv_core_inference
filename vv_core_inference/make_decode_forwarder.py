@@ -8,7 +8,7 @@ from hifi_gan.models import Generator as HifiGanPredictor
 from torch import nn
 
 from vv_core_inference.make_yukarin_sosoa_forwarder import make_yukarin_sosoa_wrapper
-from vv_core_inference.utility import to_tensor, OPSET
+from vv_core_inference.utility import OPSET, to_tensor
 
 
 class AttrDict(dict):
@@ -22,10 +22,11 @@ class WrapperHifiGanForwarder(nn.Module):
         self.predictor = predictor
 
     @torch.no_grad()
-    def forward(self, spec):
+    def forward(self, spec, f0):
         spec = spec.transpose(1, 0)
         spec = spec.unsqueeze(0)
-        wave = self.predictor(spec)[0, 0]
+        f0 = f0[:, 0].unsqueeze(0)
+        wave = self.predictor(spec, f0=f0)[0, 0]
         return wave
 
 
@@ -70,7 +71,9 @@ class WrapperDecodeForwarder(nn.Module):
         )
 
         # forward hifi gan
-        wave = self.hifi_gan_forwarder(spec)
+        ef0 = f0.clone()
+        ef0[ef0 > 0] = torch.exp(ef0[ef0 > 0])
+        wave = self.hifi_gan_forwarder(spec, f0=ef0)
         return spec, wave
 
 

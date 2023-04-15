@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import numpy
 
@@ -31,18 +31,24 @@ class Forwarder:
         self,
         yukarin_s_forwarder,
         yukarin_sa_forwarder,
+        yukarin_sosf_forwarder: Optional[Any],
         decode_forwarder,
     ):
         super().__init__()
         self.yukarin_s_forwarder = yukarin_s_forwarder
         self.yukarin_sa_forwarder = yukarin_sa_forwarder
+        self.yukarin_sosf_forwarder = yukarin_sosf_forwarder
         self.decode_forwarder = decode_forwarder
         self.yukarin_s_phoneme_class = OjtPhoneme
         self.yukarin_soso_phoneme_class = OjtPhoneme
 
     def forward(
-        self, text: str, speaker_id: int, f0_speaker_id: int, f0_correct: float = 0,
-        return_intermediate_results: bool = False
+        self,
+        text: str,
+        speaker_id: int,
+        f0_speaker_id: int,
+        f0_correct: float = 0,
+        return_intermediate_results: bool = False,
     ):
         rate = 200
         intermediate_results = {}
@@ -106,7 +112,7 @@ class Forwarder:
         yukarin_s_input = {
             "length": len(phoneme_list_s),
             "phoneme_list": numpy.ascontiguousarray(phoneme_list_s),
-            "speaker_id": numpy.array(f0_speaker_id, dtype=numpy.int64).reshape(-1)
+            "speaker_id": numpy.array(f0_speaker_id, dtype=numpy.int64).reshape(-1),
         }
         intermediate_results["yukarin_s_input"] = yukarin_s_input
         phoneme_length = self.yukarin_s_forwarder(**yukarin_s_input)
@@ -162,6 +168,20 @@ class Forwarder:
             f0_list, numpy.round(phoneme_length_sa * rate).astype(numpy.int64)
         )
 
+        f0 = SamplingData(array=f0, rate=rate).resample(24000 / 256)
+        phoneme = SamplingData(array=phoneme, rate=rate).resample(24000 / 256)
+
+        # forward yukarin sosf
+        if self.yukarin_sosf_forwarder is not None:
+            yukarin_sosf_input = {
+                "length": phoneme.shape[0],
+                "f0": f0[:, numpy.newaxis],
+                "phoneme": phoneme,
+                "speaker_id": numpy.array(speaker_id, dtype=numpy.int64).reshape(-1),
+            }
+            f0, voiced = self.yukarin_sosf_forwarder(**yukarin_sosf_input)
+            f0[~voiced] = 0
+
         # forward decode
         assert self.yukarin_soso_phoneme_class is not None
 
@@ -186,9 +206,6 @@ class Forwarder:
         array[numpy.arange(len(phoneme)), phoneme] = 1
         phoneme = array
 
-        f0 = SamplingData(array=f0, rate=rate).resample(24000 / 256)
-        phoneme = SamplingData(array=phoneme, rate=rate).resample(24000 / 256)
-
         decode_input = {
             "length": phoneme.shape[0],
             "phoneme_size": phoneme.shape[1],
@@ -199,7 +216,7 @@ class Forwarder:
         intermediate_results["yukarin_sosoa_input"] = {
             "f0": decode_input["f0"],
             "phoneme": decode_input["phoneme"],
-            "speaker_id": decode_input["speaker_id"]
+            "speaker_id": decode_input["speaker_id"],
         }
         spec, wave = self.decode_forwarder(**decode_input)
         intermediate_results["hifigan_input"] = spec
