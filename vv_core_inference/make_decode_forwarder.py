@@ -8,7 +8,7 @@ from hifi_gan.models import Generator as HifiGanPredictor
 from torch import nn
 
 from vv_core_inference.make_yukarin_sosoa_forwarder import make_yukarin_sosoa_wrapper
-from vv_core_inference.utility import OPSET, to_tensor
+from vv_core_inference.utility import to_tensor, OPSET
 
 
 class AttrDict(dict):

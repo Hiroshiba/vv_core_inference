@@ -43,12 +43,8 @@ class Forwarder:
         self.yukarin_soso_phoneme_class = OjtPhoneme
 
     def forward(
-        self,
-        text: str,
-        speaker_id: int,
-        f0_speaker_id: int,
-        f0_correct: float = 0,
-        return_intermediate_results: bool = False,
+        self, text: str, speaker_id: int, f0_speaker_id: int, f0_correct: float = 0,
+        return_intermediate_results: bool = False
     ):
         rate = 200
         intermediate_results = {}
@@ -112,7 +108,7 @@ class Forwarder:
         yukarin_s_input = {
             "length": len(phoneme_list_s),
             "phoneme_list": numpy.ascontiguousarray(phoneme_list_s),
-            "speaker_id": numpy.array(f0_speaker_id, dtype=numpy.int64).reshape(-1),
+            "speaker_id": numpy.array(f0_speaker_id, dtype=numpy.int64).reshape(-1)
         }
         intermediate_results["yukarin_s_input"] = yukarin_s_input
         phoneme_length = self.yukarin_s_forwarder(**yukarin_s_input)
@@ -217,7 +213,7 @@ class Forwarder:
         intermediate_results["yukarin_sosoa_input"] = {
             "f0": decode_input["f0"],
             "phoneme": decode_input["phoneme"],
-            "speaker_id": decode_input["speaker_id"],
+            "speaker_id": decode_input["speaker_id"]
         }
         spec, wave = self.decode_forwarder(**decode_input)
         intermediate_results["hifigan_input"] = {"spec": spec, "f0": decode_input["f0"]}
