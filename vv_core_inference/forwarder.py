@@ -179,6 +179,7 @@ class Forwarder:
                 "phoneme": phoneme,
                 "speaker_id": numpy.array(speaker_id, dtype=numpy.int64).reshape(-1),
             }
+            intermediate_results["yukarin_sosf_input"] = yukarin_sosf_input
             f0, voiced = self.yukarin_sosf_forwarder(**yukarin_sosf_input)
             f0[~voiced] = 0
 
@@ -219,7 +220,7 @@ class Forwarder:
             "speaker_id": decode_input["speaker_id"],
         }
         spec, wave = self.decode_forwarder(**decode_input)
-        intermediate_results["hifigan_input"] = spec
+        intermediate_results["hifigan_input"] = {"spec": spec, "f0": decode_input["f0"]}
         if return_intermediate_results:
             return wave, intermediate_results
         else:

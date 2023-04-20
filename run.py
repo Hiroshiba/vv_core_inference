@@ -37,6 +37,9 @@ def run(
         from vv_core_inference.onnx_yukarin_sa_forwarder import (
             make_yukarin_sa_forwarder,
         )
+        from vv_core_inference.onnx_yukarin_sosf_forwarder import (
+            make_yukarin_sosf_forwarder,
+        )
 
         if use_gpu:
             assert (
