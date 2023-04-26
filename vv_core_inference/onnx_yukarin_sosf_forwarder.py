@@ -15,26 +15,23 @@ def make_yukarin_sosf_forwarder(yukarin_sosf_model_dir: Path, device, convert=Fa
     )
 
     def _dispatcher(
-        length: int,
-        f0: np.ndarray,
+        f0_discrete: np.ndarray,
         phoneme: np.ndarray,
         speaker_id: Optional[np.ndarray] = None,
     ):
-        length = np.asarray(length).astype(np.int64)
-        f0 = np.asarray(f0)
+        f0_discrete = np.asarray(f0_discrete)
         phoneme = np.asarray(phoneme)
         if speaker_id is not None:
             speaker_id = np.asarray(speaker_id).astype(np.int64)
 
-        f0, voiced = session.run(
-            ["f0", "voiced"],
+        f0_contour, voiced = session.run(
+            ["f0_contour", "voiced"],
             {
-                "length": length,
-                "f0": f0,
+                "f0_discrete": f0_discrete,
                 "phoneme": phoneme,
                 "speaker_id": speaker_id,
             },
         )
-        return f0, voiced
+        return f0_contour, voiced
 
     return _dispatcher

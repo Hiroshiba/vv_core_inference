@@ -29,12 +29,11 @@ class WrapperYukarinSosf(nn.Module):
     @torch.no_grad()
     def forward(
         self,
-        length: Tensor,
-        f0: Tensor,
+        f0_discrete: Tensor,
         phoneme: Tensor,
         speaker_id: Tensor,
     ):
-        f0 = f0.unsqueeze(0)
+        f0_discrete = f0_discrete.unsqueeze(0)
         phoneme = phoneme.unsqueeze(0)
 
         phoneme = self.phoneme_embedder(phoneme)  # (B, L, ?)
@@ -42,22 +41,22 @@ class WrapperYukarinSosf(nn.Module):
         speaker_id = self.speaker_embedder(speaker_id)
         speaker_id = speaker_id.unsqueeze(dim=1)  # (B, 1, ?)
         speaker_feature = speaker_id.expand(
-            speaker_id.shape[0], f0.shape[1], speaker_id.shape[2]
+            speaker_id.shape[0], f0_discrete.shape[1], speaker_id.shape[2]
         )  # (B, L, ?)
 
-        h = torch.cat((f0, phoneme, speaker_feature), dim=2)  # (B, L, ?)
+        h = torch.cat((f0_discrete, phoneme, speaker_feature), dim=2)  # (B, L, ?)
         h = self.pre(h)
 
-        mask = torch.ones_like(f0).squeeze()
+        mask = torch.ones_like(f0_discrete).squeeze()
         h, _ = self.encoder(h, mask)
 
         output1 = self.post(h)
         output2 = output1 + self.postnet(output1.transpose(1, 2)).transpose(1, 2)
 
-        f0, voiced = output2[:, :, 0], output2[:, :, 1]
+        f0_contour, voiced = output2[:, :, 0], output2[:, :, 1]
         voiced = voiced > 0
 
-        return f0[0], voiced[0]
+        return f0_contour[0], voiced[0]
 
 
 def make_yukarin_sosf_wrapper(yukarin_sosf_model_dir: Path, device) -> nn.Module:
@@ -83,17 +82,15 @@ def make_yukarin_sosf_forwarder(yukarin_sosf_model_dir: Path, device):
     yukarin_sosf_forwarder = make_yukarin_sosf_wrapper(yukarin_sosf_model_dir, device)
 
     def _dispatcher(
-        length: int,
-        f0: numpy.ndarray,
+        f0_discrete: numpy.ndarray,
         phoneme: numpy.ndarray,
         speaker_id: Optional[numpy.ndarray] = None,
     ):
-        length = to_tensor(length, device=device)
-        f0 = to_tensor(f0, device=device)
+        f0_discrete = to_tensor(f0_discrete, device=device)
         phoneme = to_tensor(phoneme, device=device)
         if speaker_id is not None:
             speaker_id = to_tensor(speaker_id, device=device)
-        f0, voiced = yukarin_sosf_forwarder(length, f0, phoneme, speaker_id)
-        return f0.cpu().numpy(), voiced.cpu().numpy()
+        f0_contour, voiced = yukarin_sosf_forwarder(f0_discrete, phoneme, speaker_id)
+        return f0_contour.cpu().numpy(), voiced.cpu().numpy()
 
     return _dispatcher
