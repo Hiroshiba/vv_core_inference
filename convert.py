@@ -163,7 +163,8 @@ def convert_contour(model_dir: Path, device: str, offset: int, working_dir: Path
         ],
         output_names=["f0_contour", "voiced"],
         dynamic_axes={
-            "f0": {0: "length"},
+            "f0_discrete": {0: "length"},
+            "f0_contour": {0: "length"},
             "phoneme": {0: "length"},
             "voiced": {0: "length"},
         },
@@ -540,13 +541,15 @@ def run(
     logger.info("--- concatination ---")
     duration_merged_onnx = concat(duration_onnx_list, offsets)
     intonation_merged_onnx = concat(intonation_onnx_list, offsets)
-    contour_merged_onnx = concat(contour_onnx_list, offsets)
+    if len(contour_onnx_list) > 0:
+        contour_merged_onnx = concat(contour_onnx_list, offsets)
     spectrogram_merged_onnx = concat(spectrogram_onnx_list, offsets)
     decoder_onnx = fuse(spectrogram_merged_onnx, vocoder_onnx)
     logger.info("--- optimization ---")
     optim(duration_merged_onnx, working_dir / "duration.onnx")
     optim(intonation_merged_onnx, working_dir / "intonation.onnx")
-    optim(contour_merged_onnx, working_dir / "contour.onnx")
+    if len(contour_onnx_list) > 0:
+        optim(contour_merged_onnx, working_dir / "contour.onnx")
     optim(decoder_onnx, working_dir / "decode.onnx")
     logger.info("--- DONE! ---")
 

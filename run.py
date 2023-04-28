@@ -1,7 +1,7 @@
 import argparse
 from itertools import product
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import soundfile
 
@@ -11,7 +11,7 @@ from vv_core_inference.forwarder import Forwarder
 def run(
     yukarin_s_model_dir: Path,
     yukarin_sa_model_dir: Path,
-    yukarin_sosf_model_dir: Path,
+    yukarin_sosf_model_dir: Optional[Path],
     yukarin_sosoa_model_dir: Path,
     hifigan_model_dir: Path,
     use_gpu: bool,
@@ -51,7 +51,7 @@ def run(
         make_yukarin_sosf_forwarder(
             yukarin_sosf_model_dir=yukarin_sosf_model_dir, device=device
         )
-        if yukarin_sosf_model_dir.exists()
+        if yukarin_sosf_model_dir is not None
         else None
     )
 
@@ -87,9 +87,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--yukarin_sa_model_dir", type=Path, default=Path("model/yukarin_sa")
     )
-    parser.add_argument(
-        "--yukarin_sosf_model_dir", type=Path, default=Path("model/yukarin_sosf")
-    )
+    parser.add_argument("--yukarin_sosf_model_dir", type=Path)
     parser.add_argument(
         "--yukarin_sosoa_model_dir", type=Path, default=Path("model/yukarin_sosoa")
     )
