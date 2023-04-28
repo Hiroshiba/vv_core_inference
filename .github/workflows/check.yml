@@ -21,6 +21,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Download model
+        shell: bash
+        run: |
+          wget https://github.com/Hiroshiba/vv_core_inference/releases/download/0.0.1/model.zip
+          unzip model.zip
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
