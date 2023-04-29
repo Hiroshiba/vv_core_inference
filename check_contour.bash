@@ -10,7 +10,7 @@ python run.py \
     --yukarin_sa_model_dir "model/yukarin_sa" \
     --yukarin_sosf_model_dir "model/yukarin_sosf" \
     --yukarin_sosoa_model_dir "model/yukarin_sosoa" \
-    --hifigan_model_dir "model/hifigan" \
+    --hifigan_model_dir "model/hnhifigan" \
     --speaker_ids 5 9
 
 python convert.py \
@@ -18,7 +18,7 @@ python convert.py \
     --yukarin_sa_model_dir "model/yukarin_sa" \
     --yukarin_sosf_model_dir "model/yukarin_sosf" \
     --yukarin_sosoa_model_dir "model/yukarin_sosoa" \
-    --hifigan_model_dir "model/hifigan" \
+    --hifigan_model_dir "model/hnhifigan" \
     --working_dir "$working_dir"
 
 python run.py \
