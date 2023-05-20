@@ -442,7 +442,7 @@ def fuse(onnx1: Path, onnx2: Path):
     opset = model1.opset_import[0].version
     logger.info("opset: %d" % opset)
 
-    merged_graph = onnx.compose.merge_graphs(model1.graph, model2.graph, [("spec", "spec")])
+    merged_graph = onnx.compose.merge_graphs(model1.graph, model2.graph, [("spec", "spec")], inputs=["f0", "phoneme", "speaker_id"])
     merged = onnx.helper.make_model(merged_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)])
     logger.info(f"fused {onnx1} and {onnx2}")
     output_onnx_path = onnx1.parent / "decode_unopt.onnx"
