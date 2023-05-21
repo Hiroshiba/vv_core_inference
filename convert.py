@@ -442,7 +442,33 @@ def fuse(onnx1: Path, onnx2: Path):
     opset = model1.opset_import[0].version
     logger.info("opset: %d" % opset)
 
-    merged_graph = onnx.compose.merge_graphs(model1.graph, model2.graph, [("spec", "spec")])
+    merged_graph = onnx.GraphProto()
+    merged_graph.node.extend(model1.graph.node)
+    merged_graph.node.extend(model2.graph.node)
+    # model1のoutputであるspecはそのままmodel2のinputであるspecに接続される
+    merged_graph.input.extend(model1.graph.input)
+    merged_graph.output.extend(model2.graph.output)
+
+    init1 = set([i.name for i in model1.graph.initializer])
+    init2 = set([i.name for i in model2.graph.initializer])
+    assert len(init1 & init2) == 0
+    merged_graph.initializer.extend(model1.graph.initializer)
+    merged_graph.initializer.extend(model2.graph.initializer)
+
+    spinit1 = set([i.name for i in model1.graph.sparse_initializer])
+    spinit2 = set([i.name for i in model2.graph.sparse_initializer])
+    assert len(spinit1 & spinit2) == 0
+    merged_graph.sparse_initializer.extend(model1.graph.sparse_initializer)
+    merged_graph.sparse_initializer.extend(model2.graph.sparse_initializer)
+
+    info1 = set([i.name for i in model1.graph.value_info])
+    info2 = set([i.name for i in model2.graph.value_info])
+    assert len(info1 & info2) == 0
+    merged_graph.value_info.extend(model1.graph.value_info)
+    merged_graph.value_info.extend(model2.graph.value_info)
+
+    merged_graph.name = "decoder"
+
     merged = onnx.helper.make_model(merged_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)])
     logger.info(f"fused {onnx1} and {onnx2}")
     output_onnx_path = onnx1.parent / "decode_unopt.onnx"
@@ -454,7 +480,7 @@ def fuse(onnx1: Path, onnx2: Path):
 def optim(path: Path, output_path: Path):
     """ONNX Runtime sessionを作るときに走る最適化を利用する"""
     sess_options = onnxruntime.SessionOptions()
-    sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_BASIC
+    sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
     sess_options.optimized_model_filepath = str(output_path)
     session = onnxruntime.InferenceSession(str(path), sess_options)
 
