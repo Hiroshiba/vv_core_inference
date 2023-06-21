@@ -54,7 +54,6 @@ class WrapperYukarinSosf(nn.Module):
         output2 = output1 + self.postnet(output1.transpose(1, 2)).transpose(1, 2)
 
         f0_contour, voiced = output2[:, :, 0], output2[:, :, 1]
-        voiced = voiced > 0
 
         return f0_contour[0], voiced[0]
 
