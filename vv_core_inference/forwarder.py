@@ -180,7 +180,7 @@ class Forwarder:
             }
             intermediate_results["yukarin_sosf_input"] = yukarin_sosf_input
             f0, voiced = self.yukarin_sosf_forwarder(**yukarin_sosf_input)
-            f0[~voiced] = 0
+            f0[voiced < 0] = 0
 
         # forward decode
         assert self.yukarin_soso_phoneme_class is not None
