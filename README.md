@@ -170,8 +170,8 @@ VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
       - 値は連続値の f0
     - voiced
       - shape: [length]
-      - dtype: bool
-      - 値は True か False
+      - dtype: float
+      - 値は連続値の有声・無声確率、0以上なら有声
 - decode.onnx
   - 入力
     - f0
