@@ -1,17 +1,16 @@
 # vv_core_inference
 
-VOICEVOX のコア内で用いられているディープラーニングモデルの推論コード。
+VOICEVOX のコア内で用いられているディープラーニングモデルの推論コード。VOICEVOXコア用のonnxモデルを制作できる。
 
 サンプルとして配布しているモデルは実際の VOICEVOX のものではなく、ほとんどノイズと変わらない音が生成されます。
 含まれている config の値（層の数など）は仮の値で、VOICEVOX で使用されるモデルとは異なることがあります。
 
 ## 公開している意図
 
-VOICEVOXのコアの軽量版を作りたいためです。
+VOICEVOXコアでの音声合成をより高速・軽量にするための手法の議論や提案を受けられるようにするためです。
 
-VOICEVOXのディスク容量の軽量化をしたいのですが、時間が取れずにいます。ディスク容量が大きいのは、コア内のディープラーニングモデルの推論にlibtorchを用いているためです。そこで該当箇所のpythonコードを公開し、libtorchの代替となる軽量な手法の議論や提案を受けられるようにしました。
-
-技術的なこと以外の要件としては、諸事情により「第三者が簡単にモデルの内容を得られない」ようにする必要があります。pythonコードは容易にコードを推測できるので使えません。とりあえず推論コードが全部C++であれば大丈夫です。（こちら側で暗号化などを足します。）
+VOICEVOXコアはこのリポジトリで作ったonnxモデルを用いて計算処理（推論）が行われています。
+onnxモデルをそのまま改良するのはかなり専門的な知識が必要なので、より多くの方に馴染みのあるpytorchのモデルとコードを公開しています。
 
 ## 環境構築
 
@@ -22,7 +21,7 @@ Python 3.7.2 で開発しました。 3.7 台なら動くと思います。
 pip install -r requirements.txt
 ```
 
-## モデルのダウンロード
+## pytorchモデルのダウンロード
 
 ```bash
 wget https://github.com/Hiroshiba/vv_core_inference/releases/download/0.0.1/model.zip
@@ -31,7 +30,7 @@ unzip model.zip
 
 ## 実行
 
-```python
+```bash
 # 生成される音声はほぼノイズで、かろうじて母音がわかる程度だと思います
 python run.py \
   --yukarin_s_model_dir "model/yukarin_s" \
@@ -41,16 +40,6 @@ python run.py \
   --speaker_ids 5 \
   --texts "おはようございます、こんにちは、こんばんは、どうでしょうか"
 ```
-
-## C++のコードを python 側に持ってくる場合
-
-Cyhton が便利です。
-
-1. [VOICEVOX CORE](https://github.com/Hiroshiba/voicevox_core/tree/f4844efc65b1a4875442091955af84f671e16887)にある[core.h](https://github.com/Hiroshiba/voicevox_core/blob/f4844efc65b1a4875442091955af84f671e16887/core.h)をダウンロード
-2. core.h に合うように C++ コードを書く
-3. C++ コードから動的ライブラリをビルド
-4. あとは[README.md](https://github.com/Hiroshiba/voicevox_core/tree/f4844efc65b1a4875442091955af84f671e16887#%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89%E3%81%8B%E3%82%89%E5%AE%9F%E8%A1%8C)にあるように`python setup.py install`などを実行
-5. import して[このように](https://github.com/Hiroshiba/voicevox_core/blob/f4844efc65b1a4875442091955af84f671e16887/example/python/run.py#L21-L25)つなぎこむ
 
 ## モデルをonnxに変換
 * `python convert.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"` でonnxへの変換が可能。modelフォルダ内のyukarin_s, yukarin_sa, yukarin_sosoaフォルダにonnxが保存される。
