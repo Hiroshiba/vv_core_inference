@@ -30,7 +30,7 @@ unzip model.zip
 
 ## 実行
 
-```python
+```bash
 # 生成される音声はほぼノイズで、かろうじて母音がわかる程度だと思います
 python run.py \
   --yukarin_s_model_dir "model/yukarin_s" \
