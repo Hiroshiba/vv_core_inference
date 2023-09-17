@@ -49,7 +49,9 @@ class Forwarder:
         f0_speaker_id: int,
         f0_correct: float = 0,
         return_intermediate_results: bool = False,
+        run_until: str = "all"
     ):
+        assert run_until in ["yukarin_s", "yukarin_sa", "decode", "all"]
         rate = 200
         intermediate_results = {}
 
@@ -115,6 +117,8 @@ class Forwarder:
             "speaker_id": numpy.array(f0_speaker_id, dtype=numpy.int64).reshape(-1),
         }
         intermediate_results["yukarin_s_input"] = yukarin_s_input
+        if run_until == "yukarin_s":
+            return None, intermediate_results
         phoneme_length = self.yukarin_s_forwarder(**yukarin_s_input)
         phoneme_length[0] = phoneme_length[-1] = 0.1
         phoneme_length = numpy.round(phoneme_length * rate) / rate
@@ -154,6 +158,8 @@ class Forwarder:
             "speaker_id": numpy.array(speaker_id, dtype=numpy.int64).reshape(-1),
         }
         intermediate_results["yukarin_sa_input"] = yukarin_sa_input
+        if run_until == "yukarin_sa":
+            return None, intermediate_results
         f0_list = self.yukarin_sa_forwarder(**yukarin_sa_input)
         f0_list += f0_correct
 
@@ -218,6 +224,9 @@ class Forwarder:
             "phoneme": decode_input["phoneme"],
             "speaker_id": decode_input["speaker_id"],
         }
+        intermediate_results["decode_input"] = decode_input
+        if run_until == "decode":
+            return None, intermediate_results
         spec, wave = self.decode_forwarder(**decode_input)
         intermediate_results["hifigan_input"] = {"spec": spec, "f0": decode_input["f0"]}
         if return_intermediate_results:
