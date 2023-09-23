@@ -92,7 +92,7 @@ def quantize_vocoder(onnx_dir: Path, speaker_size: int, use_gpu: bool, calibrati
     dataset = CalibrationDataset(calibration_data[:30], forwarder, speaker_size)
 
     logger.info("preprocess decode.onnx (shape inference and optimization)")
-    # TODO: apply symbolic shape (with_hn部分で止まってしまうので？切り離す必要がある？)
+    # TODO: apply symbolic shape (with_hn部分で止まってしまうので切り離す必要がある)
     quant_pre_process(
         str(onnx_dir.joinpath("decode.onnx")),
         str(onnx_dir.joinpath("decode_prequant.onnx")),
@@ -108,7 +108,7 @@ def quantize_vocoder(onnx_dir: Path, speaker_size: int, use_gpu: bool, calibrati
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     parser = argparse.ArgumentParser()
-    parser.add_argument("--onnx_dir", type=Path, default="model")
+    parser.add_argument("--onnx_dir", type=Path, default="onnxmodel")
     parser.add_argument("--speaker_size", type=int, default=1)
     parser.add_argument("--use_gpu", action="store_true")
     parser.add_argument("--calibration_file", type=Path, default="calibration_dataset.yaml")
