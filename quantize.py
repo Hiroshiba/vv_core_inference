@@ -50,7 +50,7 @@ class CalibrationDataset(CalibrationDataReader):
         return inputs
         
 
-def quantize_vocoder(onnx_dir: Path, output_dir: Path, speaker_size: int, use_gpu: bool, calibration_file: str):
+def quantize_vocoder(onnx_dir: Path, output_dir: Path, speaker_size: int, use_gpu: bool, calibration_file: str, iteration_max: int):
     if use_gpu:
         assert onnxruntime.get_device() == "GPU", "Install onnxruntime-gpu if you want to use GPU."
 
@@ -63,6 +63,9 @@ def quantize_vocoder(onnx_dir: Path, output_dir: Path, speaker_size: int, use_gp
     with open(calibration_file, encoding="utf-8") as f:
         calibration_data = yaml.safe_load(f)["text"]
     logger.info(f"loaded {len(calibration_data)} texts")
+    if iteration_max > 0:
+        calibration_data = calibration_data[:iteration_max]
+        logger.info(f"only {iteration_max} texts will be used")
 
     logger.info("loading forwarder")
     yukarin_s_forwarder = make_yukarin_s_forwarder(
@@ -92,7 +95,7 @@ def quantize_vocoder(onnx_dir: Path, output_dir: Path, speaker_size: int, use_gp
     )
     logger.info(f"loaded forwarder in {device} mode")
 
-    dataset = CalibrationDataset(calibration_data[:30], forwarder, speaker_size)
+    dataset = CalibrationDataset(calibration_data, forwarder, speaker_size)
 
     logger.info("preprocess decode.onnx (shape inference and optimization)")
     # TODO: apply symbolic shape (with_hn部分で止まってしまうので切り離す必要がある)
@@ -121,4 +124,5 @@ if __name__ == "__main__":
     parser.add_argument("--speaker_size", type=int, default=1)
     parser.add_argument("--use_gpu", action="store_true")
     parser.add_argument("--calibration_file", type=Path, default="calibration_dataset.yaml")
+    parser.add_argument("--iteration_max", type=int, default=-1, help="maximum iterations to collect statistics")
     quantize_vocoder(**vars(parser.parse_args()))
