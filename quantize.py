@@ -1,6 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
+import shutil
 from typing import List, Optional
 
 import numpy as np
@@ -49,9 +50,11 @@ class CalibrationDataset(CalibrationDataReader):
         return inputs
         
 
-def quantize_vocoder(onnx_dir: Path, speaker_size: int, use_gpu: bool, calibration_file: str):
+def quantize_vocoder(onnx_dir: Path, output_dir: Path, speaker_size: int, use_gpu: bool, calibration_file: str):
     if use_gpu:
         assert onnxruntime.get_device() == "GPU", "Install onnxruntime-gpu if you want to use GPU."
+
+    output_dir.mkdir(exist_ok=True)
 
     device = "cuda" if use_gpu else "cpu"
     logger = logging.getLogger("quantize")
@@ -95,20 +98,26 @@ def quantize_vocoder(onnx_dir: Path, speaker_size: int, use_gpu: bool, calibrati
     # TODO: apply symbolic shape (with_hn部分で止まってしまうので切り離す必要がある)
     quant_pre_process(
         str(onnx_dir.joinpath("decode.onnx")),
-        str(onnx_dir.joinpath("decode_prequant.onnx")),
+        str(output_dir.joinpath("decode_prequant.onnx")),
         skip_symbolic_shape=True)
 
     quantize_static(
-        str(onnx_dir.joinpath("decode_prequant.onnx")),
-        str(onnx_dir.joinpath("decode_quant.onnx")),
+        str(output_dir.joinpath("decode_prequant.onnx")),
+        str(output_dir.joinpath("decode.onnx")),
         dataset,
         op_types_to_quantize=["Conv", "ConvTranspose"])
+
+    shutil.copy(onnx_dir.joinpath("duration.onnx"), output_dir)
+    shutil.copy(onnx_dir.joinpath("intonation.onnx"), output_dir)
+    if onnx_dir.joinpath("contour.onnx").exists():
+        shutil.copy(onnx_dir.joinpath("contour.onnx"), output_dir)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     parser = argparse.ArgumentParser()
     parser.add_argument("--onnx_dir", type=Path, default="onnxmodel")
+    parser.add_argument("--output_dir", type=Path, default="quantmodel")
     parser.add_argument("--speaker_size", type=int, default=1)
     parser.add_argument("--use_gpu", action="store_true")
     parser.add_argument("--calibration_file", type=Path, default="calibration_dataset.yaml")
