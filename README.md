@@ -42,9 +42,9 @@ python run.py \
 ```
 
 ## モデルをonnxに変換
-* `python convert.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"` でonnxへの変換が可能。modelフォルダ内のyukarin_s, yukarin_sa, yukarin_sosoaフォルダにonnxが保存される。
+* `python convert.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"` でonnxへの変換が可能。onnxmodelにonnxが保存される。
   - `speaker_ids`オプションに指定する数値は自由。どの数値を指定しても生成されるonnxモデルは全ての`speaker_id`に対応しており、値を変えて実行しなおしたり、複数のidを指定したりする必要は無い。
-  - yukarin_sosoaフォルダにはhifi_ganと合わせた`decode.onnx`が保存される
+  - yukarin_sosoaに対応するモデルはhifi_ganと合わせた`decode.onnx`が保存される
   - yukarin_sosfはオプショナルで、追加する場合は`--yukarin_sosf_model_dir "model/yukarin_sosf"`などを指定する
 
 * onnxで実行したい場合は`run.py`を`--method=onnx`で実行する； `python run.py --yukarin_s_model_dir "model" --yukarin_sa_model_dir "model" --yukarin_sosoa_model_dir "model" --hifigan_model_dir "model"  --speaker_ids 5  --method=onnx`
