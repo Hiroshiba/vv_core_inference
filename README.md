@@ -50,6 +50,14 @@ python run.py \
 * onnxで実行したい場合は`run.py`を`--method=onnx`で実行する； `python run.py --yukarin_s_model_dir "onnxmodel" --yukarin_sa_model_dir "onnxmodel" --yukarin_sosoa_model_dir "onnxmodel" --hifigan_model_dir "onnxmodel"  --speaker_ids 5  --method=onnx`
   - `speaker_ids`に複数の数値を指定すれば、通常実行と同様に各話者の音声が保存される。
 
+## onnxを軽量化
+* `python quantize.py` で`onnxmodel/decode.onnx`を量子化し`quantmodel`に保存する
+
+## onnxのパフォーマンステスト
+* `python test.py` でtorchモデルとonnxモデルの性能を比較できる。
+  - 何倍速くなったか、音声がどれくらい劣化したか（PSNR）が表示される。
+  - `--model quantmodel/`を指定するとtorchモデルと量子化onnxモデルを比較できる。
+
 ## ファイル構造
 
 - `run.py` ･･･ 音声合成のためのエントリーポイント
