@@ -9,4 +9,4 @@ git+https://github.com/Hiroshiba/yukarin_sa@7d6eede06782c49a18ede1a67a49d9699736
 git+https://github.com/Hiroshiba/yukarin_sosf@2f8915b4e7499541d44f170fb93e46f616e6009d
 git+https://github.com/Hiroshiba/yukarin_sosoa@4e37ef9629109b5fc63f4bc0a1470ff9a9ccd932
 git+https://github.com/Hiroshiba/hifi-gan@265da0f0f71923336615d6657f195ffdc6df25e4#egg=hifi_gan
-git+https://github.com/VOICEVOX/pyopenjtalk@f4ade29ef9a4f43d8605103cb5bacc29e0b2ccae#egg=pyopenjtalk
+git+https://github.com/VOICEVOX/pyopenjtalk@b35fc89fe42948a28e33aed886ea145a51113f88#egg=pyopenjtalk
