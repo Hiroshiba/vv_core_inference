@@ -477,12 +477,15 @@ def fuse(onnx1: Path, onnx2: Path):
     logger.info(f"saved {output_onnx_path}")
     return output_onnx_path
 
-def optim(path: Path, output_path: Path):
+def optim(path: Path, output_path: Path, use_gpu: bool = False):
     """ONNX Runtime sessionを作るときに走る最適化を利用する"""
     sess_options = onnxruntime.SessionOptions()
     sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_BASIC
     sess_options.optimized_model_filepath = str(output_path)
-    session = onnxruntime.InferenceSession(str(path), sess_options)
+    providers = ["CPUExecutionProvider"]
+    if use_gpu:
+        providers.insert(0, "CUDAExecutionProvider")
+    session = onnxruntime.InferenceSession(str(path), sess_options, providers=providers)
 
 def run(
     yukarin_s_model_dir: List[Path],
@@ -491,6 +494,7 @@ def run(
     yukarin_sosoa_model_dir: List[Path],
     hifigan_model_dir: Path,
     working_dir: Path,
+    output_dir: Path,
     text: str,
     speaker_id: int,
     use_gpu: bool,
@@ -505,12 +509,14 @@ def run(
     assert model_size == len(yukarin_sosf_model_dir)
     assert model_size == len(yukarin_sosoa_model_dir)
 
-    assert working_dir.exists() and working_dir.is_dir()
+    working_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(exist_ok=True)
 
     logger.info("device: %s" % device)
     logger.info("onnx OPSET is %d." % OPSET)
     logger.info("vocoder model dir is %s" % str(hifigan_model_dir))
     logger.info("working on %s" % str(working_dir))
+    logger.info("outputs will be in %s" % str(output_dir))
 
     logger.info("--- creating onnx models ---")
 
@@ -572,11 +578,11 @@ def run(
     spectrogram_merged_onnx = concat(spectrogram_onnx_list, offsets)
     decoder_onnx = fuse(spectrogram_merged_onnx, vocoder_onnx)
     logger.info("--- optimization ---")
-    optim(duration_merged_onnx, working_dir / "duration.onnx")
-    optim(intonation_merged_onnx, working_dir / "intonation.onnx")
+    optim(duration_merged_onnx, output_dir / "duration.onnx")
+    optim(intonation_merged_onnx, output_dir / "intonation.onnx")
     if len(contour_onnx_list) > 0:
-        optim(contour_merged_onnx, working_dir / "contour.onnx")
-    optim(decoder_onnx, working_dir / "decode.onnx")
+        optim(contour_merged_onnx, output_dir / "contour.onnx")
+    optim(decoder_onnx, output_dir / "decode.onnx")
     logger.info("--- DONE! ---")
 
 
@@ -598,7 +604,10 @@ if __name__ == "__main__":
     )
     parser.add_argument("--hifigan_model_dir", type=Path, default=Path("model/hifigan"))
     parser.add_argument(
-        "--working_dir", type=Path, default="model"
+        "--working_dir", type=Path, default="working", help="path to temporary directory"
+    )
+    parser.add_argument(
+        "--output_dir", type=Path, default="onnxmodel", help="path to save folder"
     )
     parser.add_argument("--use_gpu", action="store_true")
     parser.add_argument("--text", default="こんにちは、どうでしょう")
