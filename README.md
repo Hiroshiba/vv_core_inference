@@ -14,7 +14,7 @@ onnxモデルをそのまま改良するのはかなり専門的な知識が必�
 
 ## 環境構築
 
-Python 3.7.2 で開発しました。 3.7 台なら動くと思います。
+Python 3.9.19 で開発しました。 3.9 台なら動くと思います。
 
 ```bash
 # ５分くらいかかります
@@ -181,3 +181,10 @@ VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
       - サンプリング周波数は 24kHz
 
 音素 id は辞書に依存します。また predict_duration.onnx や predict_intonation.onnx の出力はコアによって変換されて decode.onnx の入力になります。コアを変更しない場合は phoneme_length を元に f0 と phoneme が 93.75(=24k/256)Hz になるように変換されます。
+
+## パッケージの追加・更新
+
+```bash
+poetry add `パッケージ名`
+poetry export --without-hashes -o requirements.txt
+```
