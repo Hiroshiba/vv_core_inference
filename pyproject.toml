@@ -1,0 +1,23 @@
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "~3.10"
+numpy = "1.23.5"
+pyyaml = "6.0.2"
+soundfile = "0.12.1"
+torch = "1.13.1"
+onnx = "1.16.2"
+onnxruntime = "1.18.1"
+poetry = "1.8.2"
+poetry-plugin-export = "1.8.0"
+yukarin_s = { git = "https://github.com/Hiroshiba/yukarin_s", rev = "41ac963d29986effeee8e615be9b8e49a16c26d6" }
+yukarin_sa = { git = "https://github.com/Hiroshiba/yukarin_sa", rev = "f99eb4446dd4ad5728e7a9639bcd55eeb5afc759" }
+yukarin_sosf = { git = "https://github.com/Hiroshiba/yukarin_sosf", rev = "bcc24a3bf630aacc50231243b60aba6a9378e19a" }
+yukarin_sosoa = { git = "https://github.com/Hiroshiba/yukarin_sosoa", rev = "61dabc15f6515f26d4de3262e7b0829772096036" }
+hifi-gan = { git = "https://github.com/Hiroshiba/hifi-gan", rev = "265da0f0f71923336615d6657f195ffdc6df25e4" }
+pyopenjtalk = { git = "https://github.com/VOICEVOX/pyopenjtalk", rev = "b35fc89fe42948a28e33aed886ea145a51113f88" }
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
