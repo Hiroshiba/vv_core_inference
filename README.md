@@ -42,9 +42,8 @@ python run.py \
 ```
 
 ## モデルをonnxに変換
-* `python convert.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"` でonnxへの変換が可能。modelフォルダ内のyukarin_s, yukarin_sa, yukarin_sosoaフォルダにonnxが保存される。
+* `python convert.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"` でonnxへの変換が可能。`--working_dir`で指定したフォルダ（デフォルトはmodel）にonnxが保存される。
   - `speaker_ids`オプションに指定する数値は自由。どの数値を指定しても生成されるonnxモデルは全ての`speaker_id`に対応しており、値を変えて実行しなおしたり、複数のidを指定したりする必要は無い。
-  - yukarin_sosoaフォルダにはhifi_ganと合わせた`decode.onnx`が保存される
   - yukarin_sosfはオプショナルで、追加する場合は`--yukarin_sosf_model_dir "model/yukarin_sosf"`などを指定する
 
 * onnxで実行したい場合は`run.py`を`--method=onnx`で実行する； `python run.py --yukarin_s_model_dir "model" --yukarin_sa_model_dir "model" --yukarin_sosoa_model_dir "model" --hifigan_model_dir "model"  --speaker_ids 5  --method=onnx`
@@ -86,7 +85,7 @@ python run.py \
 
 ## 自分で学習したモデルの onnx を作りたい場合
 
-VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
+VOICEVOX をビルドするには以下の 4 つの onnx が必要です。
 （predict_contourはオプショナルです。）
 
 - predict_duration.onnx
@@ -161,7 +160,7 @@ VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
       - shape: [length]
       - dtype: bool
       - 値は True か False
-- decode.onnx
+- predict_spectrogram.onnx
   - 入力
     - f0
       - shape: [length, 1]
@@ -174,13 +173,27 @@ VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
       - shape: [1]
       - dtype: int
   - 出力
+    - spec
+      - shape: [length, feats]
+      - dtype: float
+      - 周波数分解能が feats のメルスペクトログラム
+- vocoder.onnx
+  - 入力
+    - f0
+      - shape: [length, 1]
+      - dtype: float
+    - spec
+      - shape: [length, feats]
+      - dtype: float
+      - 周波数分解能が feats のメルスペクトログラム
+  - 出力
     - wave
       - shape: [outlength]
       - dtype: float
       - 値は [-1.0, 1.0] の音声波形
       - サンプリング周波数は 24kHz
 
-音素 id は辞書に依存します。また predict_duration.onnx や predict_intonation.onnx の出力はコアによって変換されて decode.onnx の入力になります。コアを変更しない場合は phoneme_length を元に f0 と phoneme が 93.75(=24k/256)Hz になるように変換されます。
+音素 id は辞書に依存します。また predict_duration.onnx や predict_intonation.onnx の出力はコアによって変換されて predict_spectrogram.onnx や vocoder.onnx の入力になります。コアを変更しない場合は phoneme_length を元に f0 と phoneme と spec が 93.75(=24k/256)Hz になるように変換されます。
 
 ## パッケージの追加・更新
 
