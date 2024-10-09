@@ -438,29 +438,6 @@ def optim(path: Path, output_path: Path):
     sess_options.optimized_model_filepath = str(output_path)
     session = onnxruntime.InferenceSession(str(path), sess_options)
 
-def repair_vocoder(path: Path, output_path: Path, hifigan_input):
-    """モデルのコンフィグによってはvocoder onnxのf0入力が消えていることがあるので修正"""
-    model = onnx.load(path)
-    opset = model.opset_import[0].version
-    input_nodes = list(model.graph.input)
-    input_names = [n.name for n in input_nodes]
-    if "f0" not in input_names:
-        sample_f0_shape = list(hifigan_input["f0"].shape)
-        sample_f0_shape[0] = None  # axis-0 is dynamic
-        arg_f0 = onnx.helper.make_tensor_value_info("f0", onnx.TensorProto.FLOAT, sample_f0_shape)
-        input_nodes.append(arg_f0)
-        
-        repaired_graph = onnx.helper.make_graph(
-            nodes=list(model.graph.node),
-            name="vocoder",
-            inputs=input_nodes,
-            outputs=list(model.graph.output),
-            initializer=list(model.graph.initializer)
-        )
-        repaired_model = onnx.helper.make_model(repaired_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)])
-        onnx.checker.check_model(repaired_model)
-        onnx.save(repaired_model, output_path)
-
 def run(
     yukarin_s_model_dir: List[Path],
     yukarin_sa_model_dir: List[Path],
@@ -553,9 +530,7 @@ def run(
     if len(contour_onnx_list) > 0:
         optim(contour_merged_onnx, working_dir / "contour.onnx")
     optim(spectrogram_merged_onnx, working_dir / "spectrogram.onnx")
-    optim(vocoder_onnx, working_dir / "vocoder_maybef0.onnx")
-    logger.info("--- vocoder repair ---")
-    repair_vocoder(working_dir / "vocoder_maybef0.onnx", working_dir / "vocoder.onnx", sample_inputs["hifigan_input"])
+    optim(vocoder_onnx, working_dir / "vocoder.onnx")
 
     logger.info("--- DONE! ---")
 
