@@ -1,9 +1,12 @@
 import argparse
 from itertools import product
 from pathlib import Path
+import time
 from typing import List
 
 import numpy as np
+from tqdm import tqdm
+import yaml
 
 from vv_core_inference.forwarder import Forwarder
 
@@ -28,29 +31,16 @@ def run(
 
     np.random.seed(0)
     device = "cuda" if use_gpu else "cpu"
-    result = {
-        "s": None,
-        "sa": None,
-        "decode": None,
-    }
 
     # yukarin_s
     yukarin_s_forwarder = make_yukarin_s_forwarder(
         yukarin_s_model_dir=yukarin_s_model_dir, device=device
     )
-    def _s(**kwargs):
-        x = yukarin_s_forwarder(**kwargs)
-        result["s"] = x
-        return x
 
     # yukarin_sa
     yukarin_sa_forwarder = make_yukarin_sa_forwarder(
         yukarin_sa_model_dir=yukarin_sa_model_dir, device=device
     )
-    def _sa(**kwargs):
-        x = yukarin_sa_forwarder(**kwargs)
-        result["sa"] = x
-        return x
 
     # decoder
     decode_forwarder = make_decode_forwarder(
@@ -58,46 +48,76 @@ def run(
         hifigan_model_dir=hifigan_model_dir,
         device=device,
     )
-    def _decode(**kwargs):
-        x = decode_forwarder(**kwargs)
-        result["decode"] = x
-        return x
 
     # Forwarder。このForwarderクラスの中を書き換えずに
     # yukarin_s_forwarder、yukarin_sa_forwarder、decode_forwarderを置き換えたい。
     forwarder = Forwarder(
-        yukarin_s_forwarder=_s,
-        yukarin_sa_forwarder=_sa,
-        decode_forwarder=_decode,
+        yukarin_s_forwarder=yukarin_s_forwarder,
+        yukarin_sa_forwarder=yukarin_sa_forwarder,
+        yukarin_sosf_forwarder=None,
+        decode_forwarder=decode_forwarder,
     )
 
-    for text, speaker_id in product(texts, speaker_ids):
-        _wave = forwarder.forward(
+    result = []
+    proctime = []
+    for text, speaker_id in tqdm(product(texts, speaker_ids), desc=method):
+        tic = time.process_time()
+        wave = forwarder.forward(
             text=text, speaker_id=speaker_id, f0_speaker_id=speaker_id
         )
-    return result
+        tac = time.process_time()
+        result.append(wave)
+        proctime.append(tac - tic)
+    return result, proctime
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--yukarin_s_model_dir", type=Path, default=Path("model/yukarin_s")
+        "--baseline", type=Path, default=Path("model"), help="path to the folder of torch models"
     )
     parser.add_argument(
-        "--yukarin_sa_model_dir", type=Path, default=Path("model/yukarin_sa")
+        "--model", type=Path, default=Path("onnxmodel"), help="path to the folder of onnx models"
     )
-    parser.add_argument(
-        "--yukarin_sosoa_model_dir", type=Path, default=Path("model/yukarin_sosoa")
-    )
-    parser.add_argument("--hifigan_model_dir", type=Path, default=Path("model/hifigan"))
     parser.add_argument("--use_gpu", action="store_true")
-    parser.add_argument("--texts", nargs="+", default=["こんにちは、どうでしょう"])
-    parser.add_argument("--speaker_ids", nargs="+", type=int, default=[5, 9])
+    parser.add_argument("--dataset", type=Path, default=Path("test_dataset.yaml"))
+    parser.add_argument("--speaker_id", type=int, default=5)
+    args = parser.parse_args()
 
-    torch_result = run(**vars(parser.parse_args()), method="torch")
-    onnx_result = run(**vars(parser.parse_args()), method="onnx")
+    with open(args.dataset, encoding="utf-8") as f:
+        test_data = yaml.safe_load(f)["text"]
+    print(f"loaded {len(test_data)} texts")
 
-    for key in ["s", "sa", "decode"]:
-        print(key, np.allclose(torch_result[key], onnx_result[key]))
+    torch_waves, torch_times = run(
+        yukarin_s_model_dir=args.baseline/"yukarin_s",
+        yukarin_sa_model_dir=args.baseline/"yukarin_sa",
+        yukarin_sosoa_model_dir=args.baseline/"yukarin_sosoa",
+        hifigan_model_dir=args.baseline/"hifigan",
+        use_gpu=args.use_gpu,
+        texts=test_data,
+        speaker_ids=[args.speaker_id],
+        method="torch"
+    )
+    onnx_waves, onnx_times = run(
+        yukarin_s_model_dir=args.model,
+        yukarin_sa_model_dir=args.model,
+        yukarin_sosoa_model_dir=args.model,
+        hifigan_model_dir=args.model,
+        use_gpu=args.use_gpu,
+        texts=test_data,
+        speaker_ids=[args.speaker_id],
+        method="onnx"
+    )
+    torch_alltime = np.sum(torch_times)
+    onnx_alltime = np.sum(onnx_times)
+    
+    torch_signal = np.concatenate(torch_waves)
+    onnx_signal = np.concatenate(onnx_waves)
+    peak_pow = (torch_signal.max() - torch_signal.min()) ** 2
+    noise_pow = np.mean((torch_signal - onnx_signal) ** 2)
 
-    print(np.abs(torch_result["decode"] - onnx_result["decode"]).max())
-    print(np.abs(torch_result["decode"] - onnx_result["decode"]).max() / np.abs(torch_result["decode"]).max())
+    print(f"=== time for processing {len(test_data)} texts ===")
+    print(f"baseline: {torch_alltime:.3f} sec")
+    print(f"model: {onnx_alltime:.3f} sec")
+    print(f"x{torch_alltime / onnx_alltime:.3f} faster")
+    print("=== model's PSNR (higher is better) ===")
+    print(10 * np.log10(peak_pow / noise_pow), "dB")

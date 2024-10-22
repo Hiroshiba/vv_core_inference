@@ -42,13 +42,21 @@ python run.py \
 ```
 
 ## モデルをonnxに変換
-* `python convert.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"` でonnxへの変換が可能。modelフォルダ内のyukarin_s, yukarin_sa, yukarin_sosoaフォルダにonnxが保存される。
+* `python convert.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"` でonnxへの変換が可能。onnxmodelにonnxが保存される。
   - `speaker_ids`オプションに指定する数値は自由。どの数値を指定しても生成されるonnxモデルは全ての`speaker_id`に対応しており、値を変えて実行しなおしたり、複数のidを指定したりする必要は無い。
-  - yukarin_sosoaフォルダにはhifi_ganと合わせた`decode.onnx`が保存される
+  - yukarin_sosoaに対応するモデルはhifi_ganと合わせた`decode.onnx`が保存される
   - yukarin_sosfはオプショナルで、追加する場合は`--yukarin_sosf_model_dir "model/yukarin_sosf"`などを指定する
 
-* onnxで実行したい場合は`run.py`を`--method=onnx`で実行する； `python run.py --yukarin_s_model_dir "model" --yukarin_sa_model_dir "model" --yukarin_sosoa_model_dir "model" --hifigan_model_dir "model"  --speaker_ids 5  --method=onnx`
+* onnxで実行したい場合は`run.py`を`--method=onnx`で実行する； `python run.py --yukarin_s_model_dir "onnxmodel" --yukarin_sa_model_dir "onnxmodel" --yukarin_sosoa_model_dir "onnxmodel" --hifigan_model_dir "onnxmodel"  --speaker_ids 5  --method=onnx`
   - `speaker_ids`に複数の数値を指定すれば、通常実行と同様に各話者の音声が保存される。
+
+## onnxを軽量化
+* `python quantize.py` で`onnxmodel/decode.onnx`を量子化し`quantmodel`に保存する
+
+## onnxのパフォーマンステスト
+* `python test.py` でtorchモデルとonnxモデルの性能を比較できる。
+  - 何倍速くなったか、音声がどれくらい劣化したか（PSNR）が表示される。
+  - `--model quantmodel/`を指定するとtorchモデルと量子化onnxモデルを比較できる。
 
 ## ファイル構造
 
