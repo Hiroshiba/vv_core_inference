@@ -190,5 +190,3 @@ VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
 poetry add `パッケージ名`
 poetry export --without-hashes -o requirements.txt
 ```
-
-TODO sosoa 置き換えたので model ディレクトリを再アップロードする
