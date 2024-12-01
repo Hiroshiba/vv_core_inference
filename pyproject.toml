@@ -3,7 +3,7 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "~3.11"
-numpy = "<1.24.0"
+numpy = "<1.26.4"
 pyyaml = "6.0.2"
 soundfile = "0.12.1"
 torch = "2.4.1"
