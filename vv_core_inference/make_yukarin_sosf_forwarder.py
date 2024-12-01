@@ -26,7 +26,6 @@ class WrapperYukarinSosf(nn.Module):
         self.post = predictor.post
         self.postnet = WrapperPostnet(predictor.postnet)
 
-    @torch.no_grad()
     def forward(
         self,
         f0_discrete: Tensor,
@@ -80,6 +79,7 @@ def make_yukarin_sosf_wrapper(yukarin_sosf_model_dir: Path, device) -> nn.Module
 def make_yukarin_sosf_forwarder(yukarin_sosf_model_dir: Path, device):
     yukarin_sosf_forwarder = make_yukarin_sosf_wrapper(yukarin_sosf_model_dir, device)
 
+    @torch.no_grad()
     def _dispatcher(
         f0_discrete: numpy.ndarray,
         phoneme: numpy.ndarray,
