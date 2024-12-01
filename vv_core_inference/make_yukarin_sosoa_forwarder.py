@@ -104,7 +104,6 @@ class WrapperYukarinSosoa(nn.Module):
         self.post = predictor.post
         self.postnet = WrapperPostnet(predictor.postnet)
 
-    @torch.no_grad()
     def forward(
         self,
         f0: Tensor,
@@ -126,7 +125,7 @@ class WrapperYukarinSosoa(nn.Module):
         h = self.pre(h)
 
         mask = torch.ones_like(f0).squeeze()
-        h, _ = self.encoder(h, mask)
+        h, _ = self.encoder(h, None, mask)
 
         output1 = self.post(h)
         output2 = output1 + self.postnet(output1.transpose(1, 2)).transpose(1, 2)
@@ -138,8 +137,8 @@ def make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir: Path, device) -> nn.Modu
         config = Config.from_dict(yaml.safe_load(f))
 
     predictor = create_predictor(config.network)
-    pe = predictor.encoder.embed[-1]
-    predictor.encoder.embed[-1] = RelPositionalEncoding(pe.d_model, pe.dropout.p) # Use my dynamic positional encoding version
+    pe = predictor.encoder.embed
+    predictor.encoder.embed = RelPositionalEncoding(pe.hidden_size, pe.dropout.p) # Use my dynamic positional encoding version
     state_dict = torch.load(
         yukarin_sosoa_model_dir.joinpath("model.pth"), map_location=device
     )
@@ -152,6 +151,7 @@ def make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir: Path, device) -> nn.Modu
 def make_yukarin_sosoa_forwarder(yukarin_sosoa_model_dir: Path, device):
     yukarin_sosoa_forwarder = make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir, device)
 
+    @torch.no_grad()
     def _dispatcher(
         f0: Tensor,
         phoneme: Tensor,

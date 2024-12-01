@@ -120,7 +120,6 @@ def convert_intonation(model_dir: Path, device: str, offset: int, working_dir: P
             "end_accent_phrase_list",
             "speaker_id",
         ],
-        example_outputs=output,
         output_names=["f0_list"],
         dynamic_axes={
             "vowel_phoneme_list": {0: "length"},
