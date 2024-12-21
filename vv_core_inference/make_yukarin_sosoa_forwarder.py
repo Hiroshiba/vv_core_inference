@@ -124,7 +124,7 @@ class WrapperYukarinSosoa(nn.Module):
 
         h = self.pre(h)
 
-        mask = torch.ones_like(f0).squeeze()
+        mask = torch.ones_like(f0)[:, :, 0]
         h, _ = self.encoder(h, None, mask)
 
         output1 = self.post(h)
