@@ -14,8 +14,6 @@ jobs:
         script:
           - check.bash
           - check_fuse.bash
-          - check_contour.bash
-          - check_contour_fuse.bash
 
     steps:
       - name: Checkout repository

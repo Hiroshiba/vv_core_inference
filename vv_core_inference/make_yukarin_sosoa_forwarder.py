@@ -5,11 +5,10 @@ import math
 import numpy
 import torch
 import yaml
-from espnet_pytorch_library.tacotron2.decoder import Postnet
 from torch import Tensor, nn
 from torch.nn.utils.rnn import pad_sequence
 from yukarin_sosoa.config import Config
-from yukarin_sosoa.network.predictor import Predictor, create_predictor
+from yukarin_sosoa.network.predictor import Predictor, create_predictor, Postnet
 
 from vv_core_inference.utility import remove_weight_norm, to_tensor
 
