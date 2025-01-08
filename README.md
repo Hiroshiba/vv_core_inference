@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ## pytorch モデルのダウンロード
 
 ```bash
-curl -L -o model.zip https://github.com/Hiroshiba/vv_core_inference/releases/download/0.0.2/model.zip
+curl -L -o model.zip https://github.com/Hiroshiba/vv_core_inference/releases/download/0.0.3/model.zip
 unzip model.zip
 rm model.zip
 ```
