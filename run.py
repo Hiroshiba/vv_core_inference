@@ -13,12 +13,11 @@ def run(
     yukarin_sa_model_dir: Path,
     yukarin_sosoa_model_dir: Path,
     hifigan_model_dir: Path,
-    use_gpu: bool,
+    device: str,
     texts: List[str],
     speaker_ids: List[int],
     method: str,
 ):
-    device = "cuda" if use_gpu else "cpu"
     if method == "torch":
         from vv_core_inference.make_decode_forwarder import make_decode_forwarder
         from vv_core_inference.make_yukarin_s_forwarder import make_yukarin_s_forwarder
@@ -30,8 +29,10 @@ def run(
         from vv_core_inference.onnx_yukarin_s_forwarder import make_yukarin_s_forwarder
         from vv_core_inference.onnx_yukarin_sa_forwarder import make_yukarin_sa_forwarder
 
-        if use_gpu:
-            assert onnxruntime.get_device() == "GPU", "Install onnxruntime-gpu if you want to use GPU."
+        if device == "cuda":
+            assert "GPU" in onnxruntime.get_device(), "Install onnxruntime-gpu if you want to use GPU."
+        elif device == "dml":
+            assert "DML" in onnxruntime.get_device(), "Install onnxruntime-directml if you want to use DML."
 
     # yukarin_s
     yukarin_s_forwarder = make_yukarin_s_forwarder(
@@ -78,7 +79,7 @@ if __name__ == "__main__":
         "--yukarin_sosoa_model_dir", type=Path, default=Path("model/yukarin_sosoa")
     )
     parser.add_argument("--hifigan_model_dir", type=Path, default=Path("model/hifigan"))
-    parser.add_argument("--use_gpu", action="store_true")
+    parser.add_argument("--device", choices=["cpu", "cuda", "dml"], default="cpu")
     parser.add_argument("--texts", nargs="+", default=["こんにちは、どうでしょう"])
     parser.add_argument("--speaker_ids", nargs="+", type=int, default=[5, 9])
     parser.add_argument("--method", choices=["torch", "onnx"], default="torch")

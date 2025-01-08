@@ -9,6 +9,8 @@ def make_decode_forwarder(yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path
     providers = ['CPUExecutionProvider']
     if device == "cuda":
       providers.insert(0, 'CUDAExecutionProvider')
+    elif device == "dml":
+        providers.insert(0, 'DmlExecutionProvider')
     session = onnxruntime.InferenceSession(
       str(yukarin_sosoa_model_dir.joinpath("decode.onnx")),
       providers=providers
