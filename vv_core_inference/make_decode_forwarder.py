@@ -21,7 +21,6 @@ class WrapperHifiGanForwarder(nn.Module):
         super().__init__()
         self.predictor = predictor
 
-    @torch.no_grad()
     def forward(self, spec, f0):
         ef0 = f0.clone()
         ef0[ef0 > 0] = torch.exp(ef0[ef0 > 0])
@@ -61,7 +60,6 @@ class WrapperDecodeForwarder(nn.Module):
         self.yukarin_sosoa_forwarder = yukarin_sosoa_forwarder
         self.hifi_gan_forwarder = hifi_gan_forwarder
 
-    @torch.no_grad()
     def forward(
         self,
         f0: torch.Tensor,
@@ -94,6 +92,7 @@ def make_decode_forwarder(
         hifi_gan_forwarder=hifi_gan_predictor,
     )
 
+    @torch.no_grad()
     def _dispatcher(
         length: int,
         phoneme_size: int,
