@@ -9,7 +9,7 @@ vocoderは並列化することができず、全ての入力パターンに対�
 import argparse
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Literal
 
 import onnx
 import onnx.compose
@@ -441,10 +441,9 @@ def run(
     working_dir: Path,
     text: str,
     speaker_id: int,
-    use_gpu: bool,
+    device: str
 ):
     logger = logging.getLogger()
-    device = "cuda" if use_gpu else "cpu"
 
     model_size = len(yukarin_s_model_dir)
     assert model_size == len(yukarin_sa_model_dir)
@@ -529,7 +528,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--working_dir", type=Path, default="model"
     )
-    parser.add_argument("--use_gpu", action="store_true")
+    parser.add_argument("--device", choices=["cpu", "cuda", "dml"], default="cpu")
     parser.add_argument("--text", default="こんにちは、どうでしょう")
     parser.add_argument("--speaker_id", type=int, default=5)
     run(**vars(parser.parse_args()))

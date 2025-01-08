@@ -12,7 +12,7 @@ def run(
     yukarin_sa_model_dir: Path,
     yukarin_sosoa_model_dir: Path,
     hifigan_model_dir: Path,
-    use_gpu: bool,
+    device: str,
     texts: List[str],
     speaker_ids: List[int],
     method: str,
@@ -27,7 +27,6 @@ def run(
         from vv_core_inference.onnx_yukarin_sa_forwarder import make_yukarin_sa_forwarder
 
     np.random.seed(0)
-    device = "cuda" if use_gpu else "cpu"
     result = {
         "s": None,
         "sa": None,
@@ -89,7 +88,7 @@ if __name__ == "__main__":
         "--yukarin_sosoa_model_dir", type=Path, default=Path("model/yukarin_sosoa")
     )
     parser.add_argument("--hifigan_model_dir", type=Path, default=Path("model/hifigan"))
-    parser.add_argument("--use_gpu", action="store_true")
+    parser.add_argument("--device", choices=["cpu", "cuda", "dml"], default="cpu")
     parser.add_argument("--texts", nargs="+", default=["こんにちは、どうでしょう"])
     parser.add_argument("--speaker_ids", nargs="+", type=int, default=[5, 9])
 
