@@ -24,8 +24,9 @@ pip install -r requirements.txt
 ## pytorch モデルのダウンロード
 
 ```bash
-wget https://github.com/Hiroshiba/vv_core_inference/releases/download/0.0.2/model.zip
+curl -L -o model.zip https://github.com/Hiroshiba/vv_core_inference/releases/download/0.0.3/model.zip
 unzip model.zip
+rm model.zip
 ```
 
 ## 実行
@@ -47,7 +48,6 @@ python run.py \
 
   - `speaker_ids`オプションに指定する数値は自由。どの数値を指定しても生成される onnx モデルは全ての`speaker_id`に対応しており、値を変えて実行しなおしたり、複数の id を指定したりする必要は無い。
   - yukarin_sosoa フォルダには hifi_gan と合わせた`decode.onnx`が保存される
-  - yukarin_sosf はオプショナルで、追加する場合は`--yukarin_sosf_model_dir "model/yukarin_sosf"`などを指定する
 
 - onnx で実行したい場合は`run.py`を`--method=onnx`で実行する； `python run.py --yukarin_s_model_dir "model" --yukarin_sa_model_dir "model" --yukarin_sosoa_model_dir "model" --hifigan_model_dir "model"  --speaker_ids 5  --method=onnx`
   - `speaker_ids`に複数の数値を指定すれば、通常実行と同様に各話者の音声が保存される。
@@ -64,8 +64,6 @@ python run.py \
     - 音素ごとの長さを求めるモデル`yukarin_s`用の`forwarder`を作る
   - `make_yukarin_sa_forwarder.py`
     - モーラごとの音高を求めるモデル`yukarin_sa`用の`forwarder`を作る
-  - `make_yukarin_sosf_forwarder.py`
-    - モーラごとの音高からフレームごとの音高を求めるモデル`yukarin_sosf`用の`forwarder`を作る
   - `make_yukarin_sosoa_forwarder.py`
     - `make_decode_forwarder`に必要な`yukarin_sosoa`用の`forwarder`を作る
   - `make_decode_forwarder.py`
@@ -74,8 +72,6 @@ python run.py \
     - onnxruntime で動作する`yukarin_s`用の`forwarder`を作る
   - `onnx_yukarin_sa_forwarder.py`
     - onnxruntime で動作する`yukarin_sa`用の`forwarder`を作る
-  - `onnx_yukarin_sosf_forwarder.py`
-    - onnxruntime で動作する`yukarin_sosf`用の`forwarder`を作る
   - `onnx_decode_forwarder.py`
     - onnxruntime で動作する音声波形生成用の`forwarder`を作る
     - `yukarin_sosoa`も内部に組み込まれている
@@ -89,7 +85,6 @@ python run.py \
 ## 自分で学習したモデルの onnx を作りたい場合
 
 VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
-（predict_contour はオプショナルです。）
 
 - predict_duration.onnx
   - 入力
@@ -141,28 +136,6 @@ VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
     - f0_list
       - shape: [sequence]
       - dtype: float
-- predict_contour.onnx
-  - 入力
-    - f0_discrete
-      - shape: [length, 1]
-      - dtype: float
-      - 値は離散値だった f0 を長さ分だけ repeat したもの
-    - phoneme
-      - shape: [length]
-      - dtype: int
-      - 値は音素 id
-    - speaker_id
-      - shape: [1]
-      - dtype: int
-  - 出力
-    - f0_contour
-      - shape: [length]
-      - dtype: float
-      - 値は連続値の f0
-    - voiced
-      - shape: [length]
-      - dtype: bool
-      - 値は True か False
 - decode.onnx
   - 入力
     - f0

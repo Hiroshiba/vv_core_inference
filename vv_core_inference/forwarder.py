@@ -31,13 +31,11 @@ class Forwarder:
         self,
         yukarin_s_forwarder,
         yukarin_sa_forwarder,
-        yukarin_sosf_forwarder: Optional[Any],
         decode_forwarder,
     ):
         super().__init__()
         self.yukarin_s_forwarder = yukarin_s_forwarder
         self.yukarin_sa_forwarder = yukarin_sa_forwarder
-        self.yukarin_sosf_forwarder = yukarin_sosf_forwarder
         self.decode_forwarder = decode_forwarder
         self.yukarin_s_phoneme_class = OjtPhoneme
         self.yukarin_soso_phoneme_class = OjtPhoneme
@@ -170,17 +168,6 @@ class Forwarder:
 
         f0 = SamplingData(array=f0, rate=rate).resample(24000 / 256)
         phoneme = SamplingData(array=phoneme, rate=rate).resample(24000 / 256)
-
-        # forward yukarin sosf
-        if self.yukarin_sosf_forwarder is not None:
-            yukarin_sosf_input = {
-                "f0_discrete": f0[:, numpy.newaxis],
-                "phoneme": phoneme,
-                "speaker_id": numpy.array(speaker_id, dtype=numpy.int64).reshape(-1),
-            }
-            intermediate_results["yukarin_sosf_input"] = yukarin_sosf_input
-            f0, voiced = self.yukarin_sosf_forwarder(**yukarin_sosf_input)
-            f0[voiced < 0] = 0
 
         # forward decode
         assert self.yukarin_soso_phoneme_class is not None

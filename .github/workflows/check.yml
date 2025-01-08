@@ -14,8 +14,6 @@ jobs:
         script:
           - check.bash
           - check_fuse.bash
-          - check_contour.bash
-          - check_contour_fuse.bash
 
     steps:
       - name: Checkout repository
@@ -24,7 +22,7 @@ jobs:
       - name: Download model
         shell: bash
         run: |
-          wget https://github.com/Hiroshiba/vv_core_inference/releases/download/0.0.2/model.zip
+          wget https://github.com/Hiroshiba/vv_core_inference/releases/download/0.0.3/model.zip
           unzip model.zip
 
       - name: Set up Python 3.11
