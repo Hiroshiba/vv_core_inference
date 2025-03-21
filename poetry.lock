@@ -3172,8 +3172,8 @@ wandb = "*"
 [package.source]
 type = "git"
 url = "https://github.com/Hiroshiba/yukarin_sosoa"
-reference = "240b3e8d67006fd3eb9935004fb626a09d0aaed7"
-resolved_reference = "240b3e8d67006fd3eb9935004fb626a09d0aaed7"
+reference = "22aa731d56bb5f1c9fe4bfab12b661035cb4a0e2"
+resolved_reference = "22aa731d56bb5f1c9fe4bfab12b661035cb4a0e2"
 
 [[package]]
 name = "zipp"
@@ -3193,4 +3193,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "2cb0a5df3a795277f7c679a95f6ca28899c16722257824e89e86a01fa7b724d3"
+content-hash = "01f10c695b72044b9425dd87eae48434c96bfe3fba94a6c5227ffc43dc837521"
