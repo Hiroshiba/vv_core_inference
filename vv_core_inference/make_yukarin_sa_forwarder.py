@@ -34,7 +34,6 @@ class WrapperYukarinSa(nn.Module):
             _rnn.num_layers * num_directions,
             1, _rnn.hidden_size)
 
-    @torch.no_grad()
     def forward(
         self,
         length: Tensor,
@@ -119,6 +118,8 @@ def make_yukarin_sa_forwarder(yukarin_sa_model_dir: Path, device):
     print("yukarin_sa loaded!")
     wrapper = WrapperYukarinSa(predictor)
 
+    
+    @torch.no_grad()
     def _dispatcher(
         length: int,
         vowel_phoneme_list: Tensor,

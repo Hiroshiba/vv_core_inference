@@ -3,7 +3,7 @@ Pytorchモデルを読み込んでONNXモデルに変換する。
 モデルを複数指定した場合は、それらを並列に接続し入力によって実行パスが切り替わるモデルが作成される。
 例えば6話者のmodel1と10話者のmodel2が接続された場合は、入力speaker_idが0-5の時はmodel1が、6-15の時はmodel2が動作するONNXモデルが生成される。
 各モデルに含まれている話者数はconfigファイルから推定される。
-複数指定可能なモデルはduration, intonation, contour, spectrogram推定。
+複数指定可能なモデルはduration, intonation, spectrogram推定。
 vocoderは並列化することができず、全ての入力パターンに対してモデルが共有される。
 """
 import argparse
@@ -22,7 +22,6 @@ from vv_core_inference.forwarder import Forwarder
 from vv_core_inference.make_decode_forwarder import make_decode_forwarder
 from vv_core_inference.make_yukarin_s_forwarder import make_yukarin_s_forwarder
 from vv_core_inference.make_yukarin_sa_forwarder import make_yukarin_sa_forwarder
-from vv_core_inference.make_yukarin_sosf_forwarder import make_yukarin_sosf_forwarder
 from vv_core_inference.utility import OPSET, to_tensor
 
 
@@ -120,7 +119,6 @@ def convert_intonation(model_dir: Path, device: str, offset: int, working_dir: P
             "end_accent_phrase_list",
             "speaker_id",
         ],
-        example_outputs=output,
         output_names=["f0_list"],
         dynamic_axes={
             "vowel_phoneme_list": {0: "length"},
@@ -130,44 +128,6 @@ def convert_intonation(model_dir: Path, device: str, offset: int, working_dir: P
             "start_accent_phrase_list": {0: "length"},
             "end_accent_phrase_list": {0: "length"},
             "f0_list": {0: "length"}},
-    )
-    return outpath, size
-
-def convert_contour(model_dir: Path, device: str, offset: int, working_dir: Path, sample_input):
-    """contour推定モデル(yukarin_sosf)のONNX変換"""
-    from vv_core_inference.make_yukarin_sosf_forwarder import make_yukarin_sosf_wrapper
-
-    logger = logging.getLogger("contour")
-
-    wrapper = make_yukarin_sosf_wrapper(model_dir, device)
-    size = wrapper.speaker_embedder.num_embeddings
-    logger.info("spectrogram model is loaded!")
-    logger.info("speaker size: %d" % size)
-    args = (
-        to_tensor(sample_input["f0_discrete"], device=device),
-        to_tensor(sample_input["phoneme"], device=device),
-        to_tensor(sample_input["speaker_id"], device=device).reshape((1,)).long()
-    )
-
-    outpath = working_dir.joinpath(f"contour-{offset:03d}.onnx")
-    torch.onnx.export(
-        wrapper,
-        args,
-        outpath,
-        opset_version=OPSET,
-        do_constant_folding=True,
-        input_names=[
-            "f0_discrete",
-            "phoneme",
-            "speaker_id"
-        ],
-        output_names=["f0_contour", "voiced"],
-        dynamic_axes={
-            "f0_discrete": {0: "length"},
-            "f0_contour": {0: "length"},
-            "phoneme": {0: "length"},
-            "voiced": {0: "length"},
-        },
     )
     return outpath, size
 
@@ -241,7 +201,6 @@ def convert_vocoder(model_dir: Path, device: str, working_dir: Path, sample_inpu
 def get_sample_inputs(
     yukarin_s_model_dir: Path,
     yukarin_sa_model_dir: Path,
-    yukarin_sosf_model_dir: Optional[Path],
     yukarin_sosoa_model_dir: Path,
     hifigan_model_dir: Path,
     sample_text: str,
@@ -259,15 +218,6 @@ def get_sample_inputs(
         yukarin_sa_model_dir=yukarin_sa_model_dir, device=device
     )
 
-    # yukarin_sosf_forwarder
-    if yukarin_sosf_model_dir is not None:
-        yukarin_sosf_forwarder = make_yukarin_sosf_forwarder(
-            yukarin_sosf_model_dir=yukarin_sosf_model_dir,
-            device=device
-        )
-    else:
-        yukarin_sosf_forwarder = None
-
     # decoder
     decode_forwarder = make_decode_forwarder(
         yukarin_sosoa_model_dir=yukarin_sosoa_model_dir,
@@ -278,7 +228,6 @@ def get_sample_inputs(
     forwarder = Forwarder(
         yukarin_s_forwarder=yukarin_s_forwarder,
         yukarin_sa_forwarder=yukarin_sa_forwarder,
-        yukarin_sosf_forwarder=yukarin_sosf_forwarder,
         decode_forwarder=decode_forwarder,
     )
 
@@ -441,7 +390,6 @@ def optim(path: Path, output_path: Path):
 def run(
     yukarin_s_model_dir: List[Path],
     yukarin_sa_model_dir: List[Path],
-    yukarin_sosf_model_dir: Optional[List[Path]],
     yukarin_sosoa_model_dir: List[Path],
     hifigan_model_dir: Path,
     working_dir: Path,
@@ -453,10 +401,7 @@ def run(
     device = "cuda" if use_gpu else "cpu"
 
     model_size = len(yukarin_s_model_dir)
-    if yukarin_sosf_model_dir is None:
-        yukarin_sosf_model_dir = [None] * model_size
     assert model_size == len(yukarin_sa_model_dir)
-    assert model_size == len(yukarin_sosf_model_dir)
     assert model_size == len(yukarin_sosoa_model_dir)
 
     assert working_dir.exists() and working_dir.is_dir()
@@ -470,21 +415,19 @@ def run(
 
     duration_onnx_list = []
     intonation_onnx_list = []
-    contour_onnx_list = []
     spectrogram_onnx_list = []
 
     offsets = [0]
-    for idx, s_dir, sa_dir, sosf_dir, sosoa_dir in zip(
-        range(model_size), yukarin_s_model_dir, yukarin_sa_model_dir, yukarin_sosf_model_dir, yukarin_sosoa_model_dir
+    for idx, s_dir, sa_dir, sosoa_dir in zip(
+        range(model_size), yukarin_s_model_dir, yukarin_sa_model_dir, yukarin_sosoa_model_dir
     ):
         logger.info(f"[{idx+1}/{model_size}] Start converting models")
         logger.info(f"duration: {s_dir}")
         logger.info(f"intonation: {sa_dir}")
-        logger.info(f"contour: {sosf_dir}")
         logger.info(f"spectrogram: {sosoa_dir}")
 
         sample_inputs = get_sample_inputs(
-            s_dir, sa_dir, sosf_dir, sosoa_dir, hifigan_model_dir, text, speaker_id, device
+            s_dir, sa_dir, sosoa_dir, hifigan_model_dir, text, speaker_id, device
         )
 
         logger.info("duration model START")
@@ -497,13 +440,6 @@ def run(
         intonation_onnx_list.append(intonation_onnx)
         logger.info("intonation model DONE")
         assert duration_size == intonation_size
-
-        if sosf_dir is not None:
-            logger.info("contour model START")
-            contour_onnx, contour_size = convert_contour(sosf_dir, device, offsets[-1], working_dir, sample_inputs["yukarin_sosf_input"])
-            contour_onnx_list.append(contour_onnx)
-            logger.info("contour model DONE")
-            assert duration_size == contour_size
 
         logger.info("spec model START")
         spec_onnx, spec_size = convert_spectrogram(sosoa_dir, device, offsets[-1], working_dir, sample_inputs["yukarin_sosoa_input"])
@@ -521,17 +457,12 @@ def run(
     logger.info("--- concatination ---")
     duration_merged_onnx = concat(duration_onnx_list, offsets)
     intonation_merged_onnx = concat(intonation_onnx_list, offsets)
-    if len(contour_onnx_list) > 0:
-        contour_merged_onnx = concat(contour_onnx_list, offsets)
     spectrogram_merged_onnx = concat(spectrogram_onnx_list, offsets)
     logger.info("--- optimization ---")
     optim(duration_merged_onnx, working_dir / "duration.onnx")
     optim(intonation_merged_onnx, working_dir / "intonation.onnx")
-    if len(contour_onnx_list) > 0:
-        optim(contour_merged_onnx, working_dir / "contour.onnx")
     optim(spectrogram_merged_onnx, working_dir / "spectrogram.onnx")
     optim(vocoder_onnx, working_dir / "vocoder.onnx")
-
     logger.info("--- DONE! ---")
 
 
@@ -544,9 +475,6 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--yukarin_sa_model_dir", type=Path, nargs="*", default=[Path("model/yukarin_sa")]
-    )
-    parser.add_argument(
-        "--yukarin_sosf_model_dir", type=Path, nargs="*", default=None
     )
     parser.add_argument(
         "--yukarin_sosoa_model_dir", type=Path, nargs="*", default=[Path("model/yukarin_sosoa")]

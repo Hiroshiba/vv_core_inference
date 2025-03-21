@@ -15,7 +15,6 @@ class WrapperYukarinS(nn.Module):
         super().__init__()
         self.predictor = predictor
 
-    @torch.no_grad()
     def forward(self, phoneme_list: Tensor, speaker_id: Tensor):
         output = self.predictor(
             phoneme_list=phoneme_list.unsqueeze(0), speaker_id=speaker_id
@@ -36,6 +35,7 @@ def make_yukarin_s_forwarder(yukarin_s_model_dir: Path, device):
     print("yukarin_s loaded!")
 
     yukarin_s_forwarder = WrapperYukarinS(predictor)
+    @torch.no_grad()
     def _dispatcher(length: int, phoneme_list: Tensor, speaker_id: Optional[Tensor]):
         phoneme_list = to_tensor(phoneme_list, device=device)
         if speaker_id is not None:

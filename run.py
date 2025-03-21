@@ -12,7 +12,6 @@ from vv_core_inference.forwarder import Forwarder
 def run(
     yukarin_s_model_dir: Path,
     yukarin_sa_model_dir: Path,
-    yukarin_sosf_model_dir: Optional[Path],
     yukarin_sosoa_model_dir: Path,
     hifigan_model_dir: Path,
     use_gpu: bool,
@@ -26,14 +25,12 @@ def run(
         from vv_core_inference.make_decode_forwarder import make_decode_forwarder
         from vv_core_inference.make_yukarin_s_forwarder import make_yukarin_s_forwarder
         from vv_core_inference.make_yukarin_sa_forwarder import make_yukarin_sa_forwarder
-        from vv_core_inference.make_yukarin_sosf_forwarder import make_yukarin_sosf_forwarder
     if method == "onnx":
         import onnxruntime
 
         from vv_core_inference.onnx_decode_forwarder import make_decode_forwarder
         from vv_core_inference.onnx_yukarin_s_forwarder import make_yukarin_s_forwarder
         from vv_core_inference.onnx_yukarin_sa_forwarder import make_yukarin_sa_forwarder
-        from vv_core_inference.onnx_yukarin_sosf_forwarder import make_yukarin_sosf_forwarder
 
         if use_gpu:
             assert onnxruntime.get_device() == "GPU", "Install onnxruntime-gpu if you want to use GPU."
@@ -48,15 +45,6 @@ def run(
         yukarin_sa_model_dir=yukarin_sa_model_dir, device=device
     )
 
-    # yukarin_sosf
-    yukarin_sosf_forwarder = (
-        make_yukarin_sosf_forwarder(
-            yukarin_sosf_model_dir=yukarin_sosf_model_dir, device=device
-        )
-        if yukarin_sosf_model_dir is not None
-        else None
-    )
-
     # decoder
     decode_forwarder = make_decode_forwarder(
         yukarin_sosoa_model_dir=yukarin_sosoa_model_dir,
@@ -69,7 +57,6 @@ def run(
     forwarder = Forwarder(
         yukarin_s_forwarder=yukarin_s_forwarder,
         yukarin_sa_forwarder=yukarin_sa_forwarder,
-        yukarin_sosf_forwarder=yukarin_sosf_forwarder,
         decode_forwarder=decode_forwarder,
     )
 
@@ -89,7 +76,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--yukarin_sa_model_dir", type=Path, default=Path("model/yukarin_sa")
     )
-    parser.add_argument("--yukarin_sosf_model_dir", type=Path)
     parser.add_argument(
         "--yukarin_sosoa_model_dir", type=Path, default=Path("model/yukarin_sosoa")
     )
