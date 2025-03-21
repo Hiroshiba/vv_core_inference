@@ -37,7 +37,6 @@ def make_decode_forwarder(yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path
         })[0]
         wave = vocoder_session.run(["wave"], {
             "spec": spec,
-            "f0": f0,
         })[0]
         return None, wave
     return _dispatcher
