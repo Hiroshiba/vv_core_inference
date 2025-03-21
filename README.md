@@ -84,7 +84,7 @@ python run.py \
 
 ## 自分で学習したモデルの onnx を作りたい場合
 
-VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
+VOICEVOX をビルドするには以下の 4 つの onnx が必要です。
 
 - predict_duration.onnx
   - 入力
@@ -136,7 +136,7 @@ VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
     - f0_list
       - shape: [sequence]
       - dtype: float
-- decode.onnx
+- predict_spectrogram.onnx
   - 入力
     - f0
       - shape: [length, 1]
@@ -149,13 +149,27 @@ VOICEVOX をビルドするには以下の 3 つの onnx が必要です。
       - shape: [1]
       - dtype: int
   - 出力
+    - spec
+      - shape: [length, feats]
+      - dtype: float
+      - 周波数分解能が feats のメルスペクトログラム
+- vocoder.onnx
+  - 入力
+    - f0
+      - shape: [length, 1]
+      - dtype: float
+    - spec
+      - shape: [length, feats]
+      - dtype: float
+      - 周波数分解能が feats のメルスペクトログラム
+  - 出力
     - wave
       - shape: [outlength]
       - dtype: float
       - 値は [-1.0, 1.0] の音声波形
       - サンプリング周波数は 24kHz
 
-音素 id は辞書に依存します。また predict_duration.onnx や predict_intonation.onnx の出力はコアによって変換されて decode.onnx の入力になります。コアを変更しない場合は phoneme_length を元に f0 と phoneme が 93.75(=24k/256)Hz になるように変換されます。
+音素 id は辞書に依存します。また predict_duration.onnx や predict_intonation.onnx の出力はコアによって変換されて predict_spectrogram.onnx や vocoder.onnx の入力になります。コアを変更しない場合は phoneme_length を元に f0 と phoneme と spec が 93.75(=24k/256)Hz になるように変換されます。
 
 ## パッケージの追加・更新
 
