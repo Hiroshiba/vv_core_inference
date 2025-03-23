@@ -164,7 +164,7 @@ def convert_spectrogram(model_dir: Path, device: str, offset: int, working_dir: 
         dynamic_axes={
             "f0": {0: "length"},
             "phoneme": {0: "length"},
-            "spec": {0: "length", 1: "feats"}
+            "spec": {0: "length"}
         }
     )
     return outpath, size
@@ -191,7 +191,7 @@ def convert_vocoder(model_dir: Path, device: str, working_dir: Path, sample_inpu
         input_names=["spec", "f0"],
         output_names=["wave"],
         dynamic_axes={
-            "spec": {0: "length", 1: "feats"},
+            "spec": {0: "length"},
             "f0": {0: "length"},
         }
     )

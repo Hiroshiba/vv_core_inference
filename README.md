@@ -150,18 +150,18 @@ VOICEVOX をビルドするには以下の 4 つの onnx が必要です。
       - dtype: int
   - 出力
     - spec
-      - shape: [length, feats]
+      - shape: [length, feat_size]
       - dtype: float
-      - 周波数分解能が feats のメルスペクトログラム
+      - 音声の中間表現
 - vocoder.onnx
   - 入力
     - f0
       - shape: [length, 1]
       - dtype: float
     - spec
-      - shape: [length, feats]
+      - shape: [length, feat_size]
       - dtype: float
-      - 周波数分解能が feats のメルスペクトログラム
+      - 音声の中間表現
   - 出力
     - wave
       - shape: [outlength]
@@ -169,7 +169,7 @@ VOICEVOX をビルドするには以下の 4 つの onnx が必要です。
       - 値は [-1.0, 1.0] の音声波形
       - サンプリング周波数は 24kHz
 
-音素 id は辞書に依存します。また predict_duration.onnx や predict_intonation.onnx の出力はコアによって変換されて predict_spectrogram.onnx や vocoder.onnx の入力になります。コアを変更しない場合は phoneme_length を元に f0 と phoneme と spec が 93.75(=24k/256)Hz になるように変換されます。
+音素 id は辞書に依存します。また predict_duration.onnx や predict_intonation.onnx の出力はコアによって変換されて predict_spectrogram.onnx や vocoder.onnx の入力になります。コアを変更しない場合は phoneme_length を元に f0 と phoneme と spec が 93.75(=24k/256)Hz になるように変換されます。predict_spectrogram.onnx は受容野が広くて逐次計算できないモデルを、vocoder.onnx は受容野が狭くて逐次計算できるモデルを想定しています。
 
 ## パッケージの追加・更新
 
