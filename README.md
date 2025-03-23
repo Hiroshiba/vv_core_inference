@@ -166,13 +166,6 @@ VOICEVOX をビルドするには以下の 4 つの onnx が必要です。
 
 音素 id は辞書に依存します。また predict_duration.onnx や predict_intonation.onnx の出力はコアによって変換されて predict_spectrogram.onnx や vocoder.onnx の入力になります。コアを変更しない場合は phoneme_length を元に f0 と phoneme と spec が 93.75(=24k/256)Hz になるように変換されます。predict_spectrogram.onnx は受容野が広くて逐次計算できないモデルを、vocoder.onnx は受容野が狭くて逐次計算できるモデルを想定しています。
 
-## パッケージの追加・更新
-
-```bash
-poetry add `パッケージ名`
-poetry export --without-hashes -o requirements.txt
-```
-
 ## フォーマット・リント
 
 ```bash
