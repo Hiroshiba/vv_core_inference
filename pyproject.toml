@@ -1,22 +1,26 @@
-[tool.poetry]
-package-mode = false
+[project]
+name = "vv-core-inference"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "hifi-gan",
+    "numpy<1.26.4",
+    "onnx==1.14.0",
+    "onnxruntime==1.15.1",
+    "pyopenjtalk",
+    "pyyaml==6.0.2",
+    "ruff>=0.11.2",
+    "soundfile==0.12.1",
+    "torch==2.4.1",
+    "yukarin-s",
+    "yukarin-sa",
+    "yukarin-sosoa",
+]
 
-[tool.poetry.dependencies]
-python = "~3.11"
-numpy = "<1.26.4"
-pyyaml = "6.0.2"
-soundfile = "0.12.1"
-torch = "2.4.1"
-onnx = "1.14.0"
-onnxruntime = "1.15.1"
-poetry = "1.8.2"
-poetry-plugin-export = "1.8.0"
-yukarin-s = {git = "https://github.com/Hiroshiba/yukarin_s", rev = "50556896d74acd6252b84dc16e58af8cb15cc7d0"}
-yukarin-sa = {git = "https://github.com/Hiroshiba/yukarin_sa", rev = "2ad1065f94d61e53006e7311086294a8b1407b6f"}
-yukarin-sosoa = {git = "https://github.com/Hiroshiba/yukarin_sosoa", rev = "22aa731d56bb5f1c9fe4bfab12b661035cb4a0e2"}
+[tool.uv.sources]
+yukarin-s = { git = "https://github.com/Hiroshiba/yukarin_s", rev = "50556896d74acd6252b84dc16e58af8cb15cc7d0" }
+yukarin-sa = { git = "https://github.com/Hiroshiba/yukarin_sa", rev = "2ad1065f94d61e53006e7311086294a8b1407b6f" }
+yukarin-sosoa = { git = "https://github.com/Hiroshiba/yukarin_sosoa", rev = "22aa731d56bb5f1c9fe4bfab12b661035cb4a0e2" }
 hifi-gan = { git = "https://github.com/Hiroshiba/hifi-gan", rev = "265da0f0f71923336615d6657f195ffdc6df25e4" }
 pyopenjtalk = { git = "https://github.com/VOICEVOX/pyopenjtalk", rev = "b35fc89fe42948a28e33aed886ea145a51113f88" }
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

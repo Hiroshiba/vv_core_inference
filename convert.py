@@ -6,10 +6,11 @@ Pytorchモデルを読み込んでONNXモデルに変換する。
 複数指定可能なモデルはduration, intonation, spectrogram推定。
 vocoderは並列化することができず、全ての入力パターンに対してモデルが共有される。
 """
+
 import argparse
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 import onnx
 import onnx.compose
@@ -25,7 +26,9 @@ from vv_core_inference.make_yukarin_sa_forwarder import make_yukarin_sa_forwarde
 from vv_core_inference.utility import OPSET, to_tensor
 
 
-def convert_duration(model_dir: Path, device: str, offset: int, working_dir: Path, sample_input):
+def convert_duration(
+    model_dir: Path, device: str, offset: int, working_dir: Path, sample_input
+):
     """duration推定モデル(yukarin_s)のONNX変換"""
     from yukarin_s.config import Config
     from yukarin_s.network.predictor import create_predictor
@@ -36,18 +39,18 @@ def convert_duration(model_dir: Path, device: str, offset: int, working_dir: Pat
     with model_dir.joinpath("config.yaml").open() as f:
         model_config = Config.from_dict(yaml.safe_load(f))
     size = model_config.network.speaker_size
-    
+
     predictor = create_predictor(model_config.network)
-    state_dict = torch.load(
-        model_dir.joinpath("model.pth"), map_location=device
-    )
+    state_dict = torch.load(model_dir.joinpath("model.pth"), map_location=device)
     predictor.load_state_dict(state_dict)
     predictor.eval().to(device)
     logger.info("duration model is loaded!")
     logger.info("speaker size: %d" % size)
 
     phoneme_list = to_tensor(sample_input["phoneme_list"], device=device)
-    speaker_id = to_tensor(sample_input["speaker_id"], device=device).reshape((1,)).long()
+    speaker_id = (
+        to_tensor(sample_input["speaker_id"], device=device).reshape((1,)).long()
+    )
 
     forwarder = WrapperYukarinS(predictor)
     outpath = working_dir.joinpath(f"duration-{offset:03d}.onnx")
@@ -61,12 +64,15 @@ def convert_duration(model_dir: Path, device: str, offset: int, working_dir: Pat
         output_names=["phoneme_length"],
         dynamic_axes={
             "phoneme_list": {0: "sequence"},
-            "phoneme_length" : {0: "sequence"}}
+            "phoneme_length": {0: "sequence"},
+        },
     )
     return outpath, size
 
 
-def convert_intonation(model_dir: Path, device: str, offset: int, working_dir: Path, sample_input):
+def convert_intonation(
+    model_dir: Path, device: str, offset: int, working_dir: Path, sample_input
+):
     """intonation推定モデル(yukarin_sa)のONNX変換"""
     from yukarin_sa.config import Config
     from yukarin_sa.network.predictor import create_predictor
@@ -80,9 +86,7 @@ def convert_intonation(model_dir: Path, device: str, offset: int, working_dir: P
     size = model_config.network.speaker_size
 
     predictor = create_predictor(model_config.network)
-    state_dict = torch.load(
-        model_dir.joinpath("model.pth"), map_location=device
-    )
+    state_dict = torch.load(model_dir.joinpath("model.pth"), map_location=device)
     predictor.load_state_dict(state_dict)
     predictor.eval().to(device)
     predictor.apply(remove_weight_norm)
@@ -98,7 +102,7 @@ def convert_intonation(model_dir: Path, device: str, offset: int, working_dir: P
         to_tensor(sample_input["end_accent_list"], device=device),
         to_tensor(sample_input["start_accent_phrase_list"], device=device),
         to_tensor(sample_input["end_accent_phrase_list"], device=device),
-        to_tensor(sample_input["speaker_id"], device=device).reshape((1,)).long()
+        to_tensor(sample_input["speaker_id"], device=device).reshape((1,)).long(),
     )
 
     output = wrapper(*args)
@@ -127,11 +131,15 @@ def convert_intonation(model_dir: Path, device: str, offset: int, working_dir: P
             "end_accent_list": {0: "length"},
             "start_accent_phrase_list": {0: "length"},
             "end_accent_phrase_list": {0: "length"},
-            "f0_list": {0: "length"}},
+            "f0_list": {0: "length"},
+        },
     )
     return outpath, size
 
-def convert_spectrogram(model_dir: Path, device: str, offset: int, working_dir: Path, sample_input):
+
+def convert_spectrogram(
+    model_dir: Path, device: str, offset: int, working_dir: Path, sample_input
+):
     """spectrogram推定モデル(decodeの前半, yukarin_sosoa)のONNX変換"""
     from vv_core_inference.make_yukarin_sosoa_forwarder import (
         make_yukarin_sosoa_wrapper,
@@ -146,7 +154,7 @@ def convert_spectrogram(model_dir: Path, device: str, offset: int, working_dir: 
     args = (
         to_tensor(sample_input["f0"], device=device),
         to_tensor(sample_input["phoneme"], device=device),
-        to_tensor(sample_input["speaker_id"], device=device)
+        to_tensor(sample_input["speaker_id"], device=device),
     )
     outpath = working_dir.joinpath(f"spectrogram-{offset:03d}.onnx")
     torch.onnx.export(
@@ -155,19 +163,16 @@ def convert_spectrogram(model_dir: Path, device: str, offset: int, working_dir: 
         outpath,
         opset_version=OPSET,
         do_constant_folding=True,
-        input_names=[
-            "f0",
-            "phoneme",
-            "speaker_id"
-        ],
+        input_names=["f0", "phoneme", "speaker_id"],
         output_names=["spec"],
         dynamic_axes={
             "f0": {0: "length"},
             "phoneme": {0: "length"},
-            "spec": {0: "length"}
-        }
+            "spec": {0: "length"},
+        },
     )
     return outpath, size
+
 
 def convert_vocoder(model_dir: Path, device: str, working_dir: Path, sample_input):
     """vocoder(decodeの後半, hifi_gan)のONNX変換"""
@@ -181,7 +186,7 @@ def convert_vocoder(model_dir: Path, device: str, working_dir: Path, sample_inpu
         to_tensor(sample_input["spec"], device=device),
         to_tensor(sample_input["f0"], device=device),
     )
-    outpath = working_dir.joinpath(f"vocoder_unopt.onnx")
+    outpath = working_dir.joinpath("vocoder_unopt.onnx")
     torch.onnx.export(
         wrapper,
         args,
@@ -193,7 +198,7 @@ def convert_vocoder(model_dir: Path, device: str, working_dir: Path, sample_inpu
         dynamic_axes={
             "spec": {0: "length"},
             "f0": {0: "length"},
-        }
+        },
     )
     return outpath
 
@@ -205,7 +210,7 @@ def get_sample_inputs(
     hifigan_model_dir: Path,
     sample_text: str,
     sample_speaker: int,
-    device: str
+    device: str,
 ):
     """ONNX変換に必要な中間表現を収集する"""
     # yukarin_s
@@ -222,7 +227,7 @@ def get_sample_inputs(
     decode_forwarder = make_decode_forwarder(
         yukarin_sosoa_model_dir=yukarin_sosoa_model_dir,
         hifigan_model_dir=hifigan_model_dir,
-        device=device
+        device=device,
     )
 
     forwarder = Forwarder(
@@ -232,10 +237,10 @@ def get_sample_inputs(
     )
 
     _wave, intermediates = forwarder.forward(
-        text = sample_text,
-        speaker_id = sample_speaker,
-        f0_speaker_id = sample_speaker,
-        return_intermediate_results = True
+        text=sample_text,
+        speaker_id=sample_speaker,
+        f0_speaker_id=sample_speaker,
+        return_intermediate_results=True,
     )
 
     return intermediates
@@ -248,7 +253,7 @@ def concat(onnx_list: List[Path], offsets: List[int]):
     ONNX上ではモデルiのノードXはm{i}.Xにリネームされ、上流のIFノードによって実行パスが変化する。
 
     goal is outputing an onnx equivalent to:
-    
+
     def merged_model(speaker_id, **kwargs):
         if speaker_id < offset[1]:
             y = model[0](speaker_id - offset[0], **kwargs)
@@ -280,7 +285,7 @@ def concat(onnx_list: List[Path], offsets: List[int]):
         input_nodes.append(node)
 
     assert "speaker_id" in input_names
-    input_names.remove("speaker_id") # speaker_id input is not shared
+    input_names.remove("speaker_id")  # speaker_id input is not shared
 
     logger.info("output names:")
     for node in models[0].graph.output:
@@ -310,51 +315,62 @@ def concat(onnx_list: List[Path], offsets: List[int]):
 
     offset_consts = []
     for i, offset in enumerate(offsets):
-        offset_consts.append(onnx.helper.make_tensor(
-            name=f"offset_{i}",
-            data_type=onnx.TensorProto.INT64,
-            dims=(),
-            vals=[offset]))
+        offset_consts.append(
+            onnx.helper.make_tensor(
+                name=f"offset_{i}",
+                data_type=onnx.TensorProto.INT64,
+                dims=(),
+                vals=[offset],
+            )
+        )
 
     for i, model in enumerate(models):
         prefix = f"m{i}."
-        rename(model.graph, prefix, input_names + output_names) # all submodules share inputs and outputs.
- 
+        rename(
+            model.graph, prefix, input_names + output_names
+        )  # all submodules share inputs and outputs.
+
     select_conds = []
     shifted_speaker_ids = []
     for i, model in enumerate(models):
         prefix = f"m{i}."
         speaker_offset = offset_consts[i]
-        speaker_end = offset_consts[i+1]
-        select_conds.append(onnx.helper.make_node(
-            "Less",
-            inputs=["speaker_id", speaker_end.name],
-            outputs=[f"select_cond_{i}"]
-        ))
-        shifted_speaker_ids.append(onnx.helper.make_node(
-            "Sub",
-            inputs=["speaker_id", speaker_offset.name],
-            outputs=[prefix + "speaker_id"]
-        ))
+        speaker_end = offset_consts[i + 1]
+        select_conds.append(
+            onnx.helper.make_node(
+                "Less",
+                inputs=["speaker_id", speaker_end.name],
+                outputs=[f"select_cond_{i}"],
+            )
+        )
+        shifted_speaker_ids.append(
+            onnx.helper.make_node(
+                "Sub",
+                inputs=["speaker_id", speaker_offset.name],
+                outputs=[prefix + "speaker_id"],
+            )
+        )
 
     branches = []
     for i, m in enumerate(models):
-        branches.append(onnx.helper.make_graph(
-            nodes=[shifted_speaker_ids[i]] + list(m.graph.node),
-            name=f"branch_m{i}",
-            inputs=[],
-            outputs=output_nodes,
-            initializer=list(m.graph.initializer) + [offset_consts[i]]
-        ))
-    
+        branches.append(
+            onnx.helper.make_graph(
+                nodes=[shifted_speaker_ids[i]] + list(m.graph.node),
+                name=f"branch_m{i}",
+                inputs=[],
+                outputs=output_nodes,
+                initializer=list(m.graph.initializer) + [offset_consts[i]],
+            )
+        )
+
     whole_graph = branches[-1]
-    for i in range(len(branches)-2, -1, -1):
+    for i in range(len(branches) - 2, -1, -1):
         if_node = onnx.helper.make_node(
             "If",
             inputs=[f"select_cond_{i}"],
             outputs=output_names,
             then_branch=branches[i],
-            else_branch=whole_graph
+            else_branch=whole_graph,
         )
         # logger.info(f"else: {whole_graph.node}")
         whole_graph = onnx.helper.make_graph(
@@ -362,7 +378,7 @@ def concat(onnx_list: List[Path], offsets: List[int]):
             name=f"branch{i}",
             inputs=[],
             outputs=output_nodes,
-            initializer=[offset_consts[i+1]]
+            initializer=[offset_consts[i + 1]],
         )
 
     whole_graph = onnx.helper.make_graph(
@@ -370,9 +386,11 @@ def concat(onnx_list: List[Path], offsets: List[int]):
         name="whole_model",
         inputs=input_nodes,
         outputs=output_nodes,
-        initializer=list(whole_graph.initializer)
+        initializer=list(whole_graph.initializer),
     )
-    whole_model = onnx.helper.make_model(whole_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)])
+    whole_model = onnx.helper.make_model(
+        whole_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)]
+    )
 
     output_onnx_path = onnx_list[0].parent / (onnx_list[0].stem[:-4] + "_unopt.onnx")
     onnx.checker.check_model(whole_model)
@@ -380,12 +398,16 @@ def concat(onnx_list: List[Path], offsets: List[int]):
     logger.info(f"saved {output_onnx_path}")
     return output_onnx_path
 
+
 def optim(path: Path, output_path: Path):
     """ONNX Runtime sessionを作るときに走る最適化を利用する"""
     sess_options = onnxruntime.SessionOptions()
-    sess_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_BASIC
+    sess_options.graph_optimization_level = (
+        onnxruntime.GraphOptimizationLevel.ORT_ENABLE_BASIC
+    )
     sess_options.optimized_model_filepath = str(output_path)
     session = onnxruntime.InferenceSession(str(path), sess_options)
+
 
 def run(
     yukarin_s_model_dir: List[Path],
@@ -419,9 +441,12 @@ def run(
 
     offsets = [0]
     for idx, s_dir, sa_dir, sosoa_dir in zip(
-        range(model_size), yukarin_s_model_dir, yukarin_sa_model_dir, yukarin_sosoa_model_dir
+        range(model_size),
+        yukarin_s_model_dir,
+        yukarin_sa_model_dir,
+        yukarin_sosoa_model_dir,
     ):
-        logger.info(f"[{idx+1}/{model_size}] Start converting models")
+        logger.info(f"[{idx + 1}/{model_size}] Start converting models")
         logger.info(f"duration: {s_dir}")
         logger.info(f"intonation: {sa_dir}")
         logger.info(f"spectrogram: {sosoa_dir}")
@@ -431,27 +456,39 @@ def run(
         )
 
         logger.info("duration model START")
-        duration_onnx, duration_size = convert_duration(s_dir, device, offsets[-1], working_dir, sample_inputs["yukarin_s_input"])
+        duration_onnx, duration_size = convert_duration(
+            s_dir, device, offsets[-1], working_dir, sample_inputs["yukarin_s_input"]
+        )
         duration_onnx_list.append(duration_onnx)
         logger.info("duration model DONE")
 
         logger.info("intonation model START")
-        intonation_onnx, intonation_size = convert_intonation(sa_dir, device, offsets[-1], working_dir, sample_inputs["yukarin_sa_input"])
+        intonation_onnx, intonation_size = convert_intonation(
+            sa_dir, device, offsets[-1], working_dir, sample_inputs["yukarin_sa_input"]
+        )
         intonation_onnx_list.append(intonation_onnx)
         logger.info("intonation model DONE")
         assert duration_size == intonation_size
 
         logger.info("spec model START")
-        spec_onnx, spec_size = convert_spectrogram(sosoa_dir, device, offsets[-1], working_dir, sample_inputs["yukarin_sosoa_input"])
+        spec_onnx, spec_size = convert_spectrogram(
+            sosoa_dir,
+            device,
+            offsets[-1],
+            working_dir,
+            sample_inputs["yukarin_sosoa_input"],
+        )
         spectrogram_onnx_list.append(spec_onnx)
         logger.info("spec model DONE")
         assert duration_size == spec_size
 
         offsets.append(offsets[-1] + duration_size)
-    
+
     logger.info(f"collected offsets: {offsets}")
     logger.info(f"[###] Start converting vocoder model: {hifigan_model_dir}")
-    vocoder_onnx = convert_vocoder(hifigan_model_dir, device, working_dir, sample_inputs["hifigan_input"])
+    vocoder_onnx = convert_vocoder(
+        hifigan_model_dir, device, working_dir, sample_inputs["hifigan_input"]
+    )
     logger.info("vocoder model DONE")
 
     logger.info("--- concatination ---")
@@ -466,23 +503,29 @@ def run(
     logger.info("--- DONE! ---")
 
 
-
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--yukarin_s_model_dir", type=Path, nargs="*", default=[Path("model/yukarin_s")]
     )
     parser.add_argument(
-        "--yukarin_sa_model_dir", type=Path, nargs="*", default=[Path("model/yukarin_sa")]
+        "--yukarin_sa_model_dir",
+        type=Path,
+        nargs="*",
+        default=[Path("model/yukarin_sa")],
     )
     parser.add_argument(
-        "--yukarin_sosoa_model_dir", type=Path, nargs="*", default=[Path("model/yukarin_sosoa")]
+        "--yukarin_sosoa_model_dir",
+        type=Path,
+        nargs="*",
+        default=[Path("model/yukarin_sosoa")],
     )
     parser.add_argument("--hifigan_model_dir", type=Path, default=Path("model/hifigan"))
-    parser.add_argument(
-        "--working_dir", type=Path, default="model"
-    )
+    parser.add_argument("--working_dir", type=Path, default="model")
     parser.add_argument("--use_gpu", action="store_true")
     parser.add_argument("--text", default="こんにちは、どうでしょう")
     parser.add_argument("--speaker_id", type=int, default=5)

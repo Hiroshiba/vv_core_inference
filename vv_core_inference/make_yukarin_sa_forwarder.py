@@ -7,7 +7,7 @@ from torch import Tensor, nn
 from yukarin_sa.config import Config
 from yukarin_sa.network.predictor import Predictor, create_predictor
 
-from vv_core_inference.utility import remove_weight_norm, to_tensor, OPSET
+from vv_core_inference.utility import remove_weight_norm, to_tensor
 
 
 class WrapperUniGRU(nn.Module):
@@ -32,7 +32,9 @@ class WrapperYukarinSa(nn.Module):
         num_directions = 2 if _rnn.bidirectional else 1
         self.ar_encoder_hidden_shape = (
             _rnn.num_layers * num_directions,
-            1, _rnn.hidden_size)
+            1,
+            _rnn.hidden_size,
+        )
 
     def forward(
         self,
@@ -67,9 +69,7 @@ class WrapperYukarinSa(nn.Module):
                 end_accent_phrase_list,
             ],
             dim=1,
-        ).to(
-            ph.dtype
-        )  # (batch_size, ?, length)
+        ).to(ph.dtype)  # (batch_size, ?, length)
 
         h = torch.cat((ph, ah), dim=1)  # (batch_size, ?, length)
 
@@ -78,7 +78,9 @@ class WrapperYukarinSa(nn.Module):
         speaker = speaker_id.expand(
             speaker_id.shape[0], speaker_id.shape[1], ph.shape[2]
         )  # (batch_size, _speaker_emb, length)
-        encoder_input = torch.cat((h, speaker), dim=1)  # (batch_size, encoder_emb = _phoneme_emb + 4 + speaker_emb, length)
+        encoder_input = torch.cat(
+            (h, speaker), dim=1
+        )  # (batch_size, encoder_emb = _phoneme_emb + 4 + speaker_emb, length)
         encoder_input = encoder_input.view(1, -1, length)
 
         h = self.encoder(encoder_input)  # (batch_size, encoder_emb, length)
@@ -87,13 +89,13 @@ class WrapperYukarinSa(nn.Module):
             batch_size, 1, 1, dtype=h.dtype, device=h.device
         )  # (batch_size, 1, 1)
 
-        hidden = torch.zeros(
-            self.ar_encoder_hidden_shape,
-            device=h.device)
+        hidden = torch.zeros(self.ar_encoder_hidden_shape, device=h.device)
         f0 = []
         for i in range(int(length)):
             h_one = h[:, :, i : i + 1]  # (batch_size, encoder_emb, 1)
-            ar_encoder_input = torch.cat((h_one, f0_one), dim=1)  # (batch_size, encoder_emb+1, 1)
+            ar_encoder_input = torch.cat(
+                (h_one, f0_one), dim=1
+            )  # (batch_size, encoder_emb+1, 1)
             h_one, hidden = self.ar_encoder(
                 ar_encoder_input, hidden=hidden
             )  # (batch_size, ?, 1)
@@ -118,7 +120,6 @@ def make_yukarin_sa_forwarder(yukarin_sa_model_dir: Path, device):
     print("yukarin_sa loaded!")
     wrapper = WrapperYukarinSa(predictor)
 
-    
     @torch.no_grad()
     def _dispatcher(
         length: int,
@@ -135,9 +136,7 @@ def make_yukarin_sa_forwarder(yukarin_sa_model_dir: Path, device):
         consonant_phoneme_list = to_tensor(consonant_phoneme_list, device=device)
         start_accent_list = to_tensor(start_accent_list, device=device)
         end_accent_list = to_tensor(end_accent_list, device=device)
-        start_accent_phrase_list = to_tensor(
-            start_accent_phrase_list, device=device
-        )
+        start_accent_phrase_list = to_tensor(start_accent_phrase_list, device=device)
         end_accent_phrase_list = to_tensor(end_accent_phrase_list, device=device)
 
         if speaker_id is not None:
@@ -156,5 +155,5 @@ def make_yukarin_sa_forwarder(yukarin_sa_model_dir: Path, device):
         )
         output = wrapper(*args)
         return output.cpu().numpy()
-    return _dispatcher
 
+    return _dispatcher

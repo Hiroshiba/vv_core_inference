@@ -7,7 +7,7 @@ from torch import Tensor, nn
 from yukarin_s.config import Config
 from yukarin_s.network.predictor import Predictor, create_predictor
 
-from vv_core_inference.utility import to_tensor, OPSET
+from vv_core_inference.utility import to_tensor
 
 
 class WrapperYukarinS(nn.Module):
@@ -35,6 +35,7 @@ def make_yukarin_s_forwarder(yukarin_s_model_dir: Path, device):
     print("yukarin_s loaded!")
 
     yukarin_s_forwarder = WrapperYukarinS(predictor)
+
     @torch.no_grad()
     def _dispatcher(length: int, phoneme_list: Tensor, speaker_id: Optional[Tensor]):
         phoneme_list = to_tensor(phoneme_list, device=device)
