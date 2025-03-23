@@ -9,8 +9,12 @@ def make_decode_forwarder(yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path
     providers = ['CPUExecutionProvider']
     if device == "cuda":
       providers.insert(0, 'CUDAExecutionProvider')
-    session = onnxruntime.InferenceSession(
-      str(yukarin_sosoa_model_dir.joinpath("decode.onnx")),
+    spectrogram_session = onnxruntime.InferenceSession(
+      str(yukarin_sosoa_model_dir.joinpath("spectrogram.onnx")),
+      providers=providers
+    )
+    vocoder_session = onnxruntime.InferenceSession(
+      str(hifigan_model_dir.joinpath("vocoder.onnx")),
       providers=providers
     )
 
@@ -26,10 +30,13 @@ def make_decode_forwarder(yukarin_sosoa_model_dir: Path, hifigan_model_dir: Path
         if speaker_id is not None:
             speaker_id = np.asarray(speaker_id)
             speaker_id = speaker_id.reshape((1,)).astype(np.int64)
-        wave = session.run(["wave"], {
+        spec = spectrogram_session.run(["spec"], {
             "f0": f0,
             "phoneme": phoneme,
             "speaker_id": speaker_id,
+        })[0]
+        wave = vocoder_session.run(["wave"], {
+            "spec": spec,
         })[0]
         return None, wave
     return _dispatcher

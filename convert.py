@@ -164,7 +164,7 @@ def convert_spectrogram(model_dir: Path, device: str, offset: int, working_dir: 
         dynamic_axes={
             "f0": {0: "length"},
             "phoneme": {0: "length"},
-            "spec": {0: "row", 1: "col"}
+            "spec": {0: "length"}
         }
     )
     return outpath, size
@@ -181,7 +181,7 @@ def convert_vocoder(model_dir: Path, device: str, working_dir: Path, sample_inpu
         to_tensor(sample_input["spec"], device=device),
         to_tensor(sample_input["f0"], device=device),
     )
-    outpath = working_dir.joinpath(f"vocoder.onnx")
+    outpath = working_dir.joinpath(f"vocoder_unopt.onnx")
     torch.onnx.export(
         wrapper,
         args,
@@ -191,7 +191,7 @@ def convert_vocoder(model_dir: Path, device: str, working_dir: Path, sample_inpu
         input_names=["spec", "f0"],
         output_names=["wave"],
         dynamic_axes={
-            "spec": {0: "row", 1: "col"},
+            "spec": {0: "length"},
             "f0": {0: "length"},
         }
     )
@@ -380,52 +380,6 @@ def concat(onnx_list: List[Path], offsets: List[int]):
     logger.info(f"saved {output_onnx_path}")
     return output_onnx_path
 
-
-def fuse(onnx1: Path, onnx2: Path):
-    """ふたつのONNXモデルを直列に接続する。spectrogramとvocoderを接続するために利用する。"""
-    # you can use onnx.compose.merge_models
-    # https://github.com/onnx/onnx/blob/main/docs/PythonAPIOverview.md#onnx-compose
-    logger = logging.getLogger("fuse")
-    model1 = onnx.load(onnx1)
-    model2 = onnx.load(onnx2)
-    opset = model1.opset_import[0].version
-    logger.info("opset: %d" % opset)
-
-    merged_graph = onnx.GraphProto()
-    merged_graph.node.extend(model1.graph.node)
-    merged_graph.node.extend(model2.graph.node)
-    # model1のoutputであるspecはそのままmodel2のinputであるspecに接続される
-    merged_graph.input.extend(model1.graph.input)
-    merged_graph.output.extend(model2.graph.output)
-
-    init1 = set([i.name for i in model1.graph.initializer])
-    init2 = set([i.name for i in model2.graph.initializer])
-    assert len(init1 & init2) == 0
-    merged_graph.initializer.extend(model1.graph.initializer)
-    merged_graph.initializer.extend(model2.graph.initializer)
-
-    spinit1 = set([i.name for i in model1.graph.sparse_initializer])
-    spinit2 = set([i.name for i in model2.graph.sparse_initializer])
-    assert len(spinit1 & spinit2) == 0
-    merged_graph.sparse_initializer.extend(model1.graph.sparse_initializer)
-    merged_graph.sparse_initializer.extend(model2.graph.sparse_initializer)
-
-    info1 = set([i.name for i in model1.graph.value_info])
-    info2 = set([i.name for i in model2.graph.value_info])
-    assert len(info1 & info2) == 0
-    merged_graph.value_info.extend(model1.graph.value_info)
-    merged_graph.value_info.extend(model2.graph.value_info)
-
-    merged_graph.name = "decoder"
-
-    merged = onnx.helper.make_model(merged_graph, opset_imports=[onnx.helper.make_operatorsetid("", opset)])
-    logger.info(f"fused {onnx1} and {onnx2}")
-    output_onnx_path = onnx1.parent / "decode_unopt.onnx"
-    onnx.checker.check_model(merged)
-    onnx.save(merged, output_onnx_path)
-    logger.info(f"saved {output_onnx_path}")
-    return output_onnx_path
-
 def optim(path: Path, output_path: Path):
     """ONNX Runtime sessionを作るときに走る最適化を利用する"""
     sess_options = onnxruntime.SessionOptions()
@@ -504,11 +458,11 @@ def run(
     duration_merged_onnx = concat(duration_onnx_list, offsets)
     intonation_merged_onnx = concat(intonation_onnx_list, offsets)
     spectrogram_merged_onnx = concat(spectrogram_onnx_list, offsets)
-    decoder_onnx = fuse(spectrogram_merged_onnx, vocoder_onnx)
     logger.info("--- optimization ---")
     optim(duration_merged_onnx, working_dir / "duration.onnx")
     optim(intonation_merged_onnx, working_dir / "intonation.onnx")
-    optim(decoder_onnx, working_dir / "decode.onnx")
+    optim(spectrogram_merged_onnx, working_dir / "spectrogram.onnx")
+    optim(vocoder_onnx, working_dir / "vocoder.onnx")
     logger.info("--- DONE! ---")
 
 

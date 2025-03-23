@@ -1,5 +1,6 @@
 import argparse
 from itertools import product
+import numpy as np
 from pathlib import Path
 from typing import List, Optional
 
@@ -18,6 +19,7 @@ def run(
     speaker_ids: List[int],
     method: str,
 ):
+    np.random.seed(0)
     device = "cuda" if use_gpu else "cpu"
     if method == "torch":
         from vv_core_inference.make_decode_forwarder import make_decode_forwarder
