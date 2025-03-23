@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "hifi-gan",
     "numpy<1.26.4",
+    "old-yukarin-sosoa",
     "onnx==1.14.0",
     "onnxruntime==1.15.1",
     "pyopenjtalk",
@@ -24,3 +25,4 @@ yukarin-sa = { git = "https://github.com/Hiroshiba/yukarin_sa", rev = "2ad1065f9
 yukarin-sosoa = { git = "https://github.com/Hiroshiba/yukarin_sosoa", rev = "22aa731d56bb5f1c9fe4bfab12b661035cb4a0e2" }
 hifi-gan = { git = "https://github.com/Hiroshiba/hifi-gan", rev = "265da0f0f71923336615d6657f195ffdc6df25e4" }
 pyopenjtalk = { git = "https://github.com/VOICEVOX/pyopenjtalk", rev = "b35fc89fe42948a28e33aed886ea145a51113f88" }
+old-yukarin-sosoa = { git = "https://github.com/Hiroshiba/old_yukarin_sosoa", rev = "38dcd81805549658d2a8a6e871cbc75513154c7a" }

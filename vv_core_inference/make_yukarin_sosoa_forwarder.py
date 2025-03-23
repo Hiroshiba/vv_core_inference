@@ -1,13 +1,18 @@
+import math
+from copy import deepcopy
 from pathlib import Path
 from typing import Optional
-import math
 
 import numpy
 import torch
 import yaml
+from old_yukarin_sosoa.config import Config as OldConfig
+from old_yukarin_sosoa.network.predictor import Postnet as OldPostnet
+from old_yukarin_sosoa.network.predictor import Predictor as OldPredictor
+from old_yukarin_sosoa.network.predictor import create_predictor as old_create_predictor
 from torch import Tensor, nn
 from yukarin_sosoa.config import Config
-from yukarin_sosoa.network.predictor import Predictor, create_predictor, Postnet
+from yukarin_sosoa.network.predictor import Postnet, Predictor, create_predictor
 
 from vv_core_inference.utility import remove_weight_norm, to_tensor
 
@@ -85,7 +90,7 @@ def make_non_pad_mask(lengths: Tensor):
 
 
 class WrapperPostnet(nn.Module):
-    def __init__(self, net: Postnet):
+    def __init__(self, net: Postnet | OldPostnet):
         super().__init__()
         self.postnet = net.postnet
 
@@ -96,7 +101,7 @@ class WrapperPostnet(nn.Module):
 
 
 class WrapperYukarinSosoa(nn.Module):
-    def __init__(self, predictor: Predictor):
+    def __init__(self, predictor: Predictor | OldPredictor, is_old: bool):
         super().__init__()
 
         self.speaker_embedder = predictor.speaker_embedder
@@ -104,6 +109,7 @@ class WrapperYukarinSosoa(nn.Module):
         self.encoder = predictor.encoder
         self.post = predictor.post
         self.postnet = WrapperPostnet(predictor.postnet)
+        self.is_old = is_old
 
     def forward(
         self,
@@ -126,7 +132,10 @@ class WrapperYukarinSosoa(nn.Module):
         h = self.pre(h)
 
         mask = torch.ones_like(f0)[:, :, 0]
-        h, _ = self.encoder(h, None, mask)
+        if self.is_old:
+            h, _ = self.encoder(h, mask)
+        else:
+            h, _ = self.encoder(h, None, mask)
 
         output1 = self.post(h)
         output2 = output1 + self.postnet(output1.transpose(1, 2)).transpose(1, 2)
@@ -135,13 +144,19 @@ class WrapperYukarinSosoa(nn.Module):
 
 def make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir: Path, device) -> nn.Module:
     with yukarin_sosoa_model_dir.joinpath("config.yaml").open() as f:
-        config = Config.from_dict(yaml.safe_load(f))
-
-    predictor = create_predictor(config.network)
-    pe = predictor.encoder.embed
-    predictor.encoder.embed = RelPositionalEncoding(
-        pe.hidden_size, pe.dropout.p
-    )  # Use my dynamic positional encoding version
+        config_dict = yaml.safe_load(f)
+    try:
+        config = OldConfig.from_dict(deepcopy(config_dict))
+        predictor = old_create_predictor(config.network)
+        pe = predictor.encoder.embed[-1]
+        predictor.encoder.embed[-1] = RelPositionalEncoding(pe.d_model, pe.dropout.p)
+        is_old = True
+    except Exception:
+        config = Config.from_dict(deepcopy(config_dict))
+        predictor = create_predictor(config.network)
+        pe = predictor.encoder.embed
+        predictor.encoder.embed = RelPositionalEncoding(pe.hidden_size, pe.dropout.p)
+        is_old = False
     state_dict = torch.load(
         yukarin_sosoa_model_dir.joinpath("model.pth"), map_location=device
     )
@@ -149,7 +164,7 @@ def make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir: Path, device) -> nn.Modu
     predictor.eval().to(device)
     predictor.apply(remove_weight_norm)
     print("yukarin_sosoa loaded!")
-    return WrapperYukarinSosoa(predictor)
+    return WrapperYukarinSosoa(predictor, is_old)
 
 
 def make_yukarin_sosoa_forwarder(yukarin_sosoa_model_dir: Path, device):
