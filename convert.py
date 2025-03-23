@@ -182,7 +182,10 @@ def convert_vocoder(model_dir: Path, device: str, working_dir: Path, sample_inpu
 
     wrapper = make_hifigan_wrapper(model_dir, device)
     logger.info("vocoder model is loaded!")
-    args = (to_tensor(sample_input["spec"], device=device),)
+    args = (
+        to_tensor(sample_input["spec"], device=device),
+        to_tensor(sample_input["f0"], device=device),
+    )
     outpath = working_dir.joinpath("vocoder_unopt.onnx")
     torch.onnx.export(
         wrapper,
@@ -190,10 +193,11 @@ def convert_vocoder(model_dir: Path, device: str, working_dir: Path, sample_inpu
         outpath,
         opset_version=OPSET,
         do_constant_folding=True,
-        input_names=["spec"],
+        input_names=["spec", "f0"],
         output_names=["wave"],
         dynamic_axes={
             "spec": {0: "length"},
+            "f0": {0: "length"},
         },
     )
     return outpath
