@@ -5,21 +5,21 @@ working_dir=working/
 rm -rf $working_dir
 mkdir -p $working_dir
 
-python run.py \
+uv run run.py \
     --yukarin_s_model_dir "model/yukarin_s" \
     --yukarin_sa_model_dir "model/yukarin_sa" \
     --yukarin_sosoa_model_dir "model/yukarin_sosoa" \
     --hifigan_model_dir "model/hifigan" \
     --speaker_ids 5 9
 
-python convert.py \
+uv run convert.py \
     --yukarin_s_model_dir "model/yukarin_s" \
     --yukarin_sa_model_dir "model/yukarin_sa" \
     --yukarin_sosoa_model_dir "model/yukarin_sosoa" \
     --hifigan_model_dir "model/hifigan" \
     --working_dir "$working_dir"
 
-python run.py \
+uv run run.py \
     --yukarin_s_model_dir "$working_dir" \
     --yukarin_sa_model_dir "$working_dir" \
     --yukarin_sosoa_model_dir "$working_dir" \

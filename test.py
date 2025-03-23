@@ -7,6 +7,7 @@ import numpy as np
 
 from vv_core_inference.forwarder import Forwarder
 
+
 def run(
     yukarin_s_model_dir: Path,
     yukarin_sa_model_dir: Path,
@@ -20,11 +21,15 @@ def run(
     if method == "torch":
         from vv_core_inference.make_decode_forwarder import make_decode_forwarder
         from vv_core_inference.make_yukarin_s_forwarder import make_yukarin_s_forwarder
-        from vv_core_inference.make_yukarin_sa_forwarder import make_yukarin_sa_forwarder
+        from vv_core_inference.make_yukarin_sa_forwarder import (
+            make_yukarin_sa_forwarder,
+        )
     if method == "onnx":
         from vv_core_inference.onnx_decode_forwarder import make_decode_forwarder
         from vv_core_inference.onnx_yukarin_s_forwarder import make_yukarin_s_forwarder
-        from vv_core_inference.onnx_yukarin_sa_forwarder import make_yukarin_sa_forwarder
+        from vv_core_inference.onnx_yukarin_sa_forwarder import (
+            make_yukarin_sa_forwarder,
+        )
 
     np.random.seed(0)
     device = "cuda" if use_gpu else "cpu"
@@ -38,6 +43,7 @@ def run(
     yukarin_s_forwarder = make_yukarin_s_forwarder(
         yukarin_s_model_dir=yukarin_s_model_dir, device=device
     )
+
     def _s(**kwargs):
         x = yukarin_s_forwarder(**kwargs)
         result["s"] = x
@@ -47,6 +53,7 @@ def run(
     yukarin_sa_forwarder = make_yukarin_sa_forwarder(
         yukarin_sa_model_dir=yukarin_sa_model_dir, device=device
     )
+
     def _sa(**kwargs):
         x = yukarin_sa_forwarder(**kwargs)
         result["sa"] = x
@@ -58,6 +65,7 @@ def run(
         hifigan_model_dir=hifigan_model_dir,
         device=device,
     )
+
     def _decode(**kwargs):
         x = decode_forwarder(**kwargs)
         result["decode"] = x
@@ -76,6 +84,7 @@ def run(
             text=text, speaker_id=speaker_id, f0_speaker_id=speaker_id
         )
     return result
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -100,4 +109,7 @@ if __name__ == "__main__":
         print(key, np.allclose(torch_result[key], onnx_result[key]))
 
     print(np.abs(torch_result["decode"] - onnx_result["decode"]).max())
-    print(np.abs(torch_result["decode"] - onnx_result["decode"]).max() / np.abs(torch_result["decode"]).max())
+    print(
+        np.abs(torch_result["decode"] - onnx_result["decode"]).max()
+        / np.abs(torch_result["decode"]).max()
+    )

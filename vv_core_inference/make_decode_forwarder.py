@@ -16,6 +16,7 @@ class AttrDict(dict):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
 
+
 class WrapperHifiGanForwarder(nn.Module):
     def __init__(self, predictor: HifiGanPredictor):
         super().__init__()
