@@ -173,9 +173,13 @@ poetry add `パッケージ名`
 poetry export --without-hashes -o requirements.txt
 ```
 
-## フォーマット
+## フォーマット・リント
 
 ```bash
+# フォーマット
 ruff format
 ruff check --fix
+
+# リント
+ruff check
 ```

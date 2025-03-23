@@ -1,4 +1,4 @@
-name: check
+name: test
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download model
         shell: bash
@@ -25,17 +25,19 @@ jobs:
           wget https://github.com/Hiroshiba/vv_core_inference/releases/download/0.0.3/model.zip
           unzip model.zip
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
-          cache: "pip"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
-      - name: Install dependencies
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install the project
+        run: uv sync --all-extras --dev
+
+      - name: Lint
         shell: bash
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          ruff check
 
       - name: Run script
         shell: bash
