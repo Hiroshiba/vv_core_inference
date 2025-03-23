@@ -105,7 +105,7 @@ def convert_intonation(
         to_tensor(sample_input["speaker_id"], device=device).reshape((1,)).long(),
     )
 
-    output = wrapper(*args)
+    _ = wrapper(*args)
     outpath = working_dir.joinpath(f"intonation-{offset:03d}.onnx")
     torch.onnx.export(
         torch.jit.script(wrapper),
@@ -406,7 +406,7 @@ def optim(path: Path, output_path: Path):
         onnxruntime.GraphOptimizationLevel.ORT_ENABLE_BASIC
     )
     sess_options.optimized_model_filepath = str(output_path)
-    session = onnxruntime.InferenceSession(str(path), sess_options)
+    _ = onnxruntime.InferenceSession(str(path), sess_options)
 
 
 def run(
