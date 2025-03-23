@@ -11,9 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        model_version:
+          - "0.0.1"
+          - "0.0.3"
         script:
-          - check.bash
-          - check_fuse.bash
+          - "check.bash"
+          - "check_fuse.bash"
 
     steps:
       - name: Checkout repository
@@ -22,14 +25,15 @@ jobs:
       - name: Download model
         shell: bash
         run: |
-          wget https://github.com/Hiroshiba/vv_core_inference/releases/download/0.0.3/model.zip
+          wget https://github.com/Hiroshiba/vv_core_inference/releases/download/${{ matrix.model_version }}/model.zip
           unzip model.zip
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
       - name: Set up Python
-        run: uv python install
+        run: |
+          uv python install
 
       - name: Run script
         shell: bash
