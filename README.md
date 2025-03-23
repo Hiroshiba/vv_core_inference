@@ -14,12 +14,7 @@ onnx モデルをそのまま改良するのはかなり専門的な知識が必
 
 ## 環境構築
 
-Python 3.11.9 で開発しました。 3.11 台なら動くと思います。
-
-```bash
-# ５分くらいかかります
-pip install -r requirements.txt
-```
+[uv](https://github.com/astral-sh/uv) で開発しています。
 
 ## pytorch モデルのダウンロード
 
@@ -33,7 +28,7 @@ rm model.zip
 
 ```bash
 # 生成される音声はほぼノイズで、かろうじて母音がわかる程度だと思います
-python run.py \
+uv run run.py \
   --yukarin_s_model_dir "model/yukarin_s" \
   --yukarin_sa_model_dir "model/yukarin_sa" \
   --yukarin_sosoa_model_dir "model/yukarin_sosoa" \
@@ -44,12 +39,12 @@ python run.py \
 
 ## モデルを onnx に変換
 
-- `python convert.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"` で onnx への変換が可能。model フォルダ内の yukarin_s, yukarin_sa, yukarin_sosoa フォルダに onnx が保存される。
+- `uv run convert.py --yukarin_s_model_dir "model/yukarin_s" --yukarin_sa_model_dir "model/yukarin_sa" --yukarin_sosoa_model_dir "model/yukarin_sosoa" --hifigan_model_dir "model/hifigan"` で onnx への変換が可能。model フォルダ内の yukarin_s, yukarin_sa, yukarin_sosoa フォルダに onnx が保存される。
 
   - `speaker_ids`オプションに指定する数値は自由。どの数値を指定しても生成される onnx モデルは全ての`speaker_id`に対応しており、値を変えて実行しなおしたり、複数の id を指定したりする必要は無い。
   - yukarin_sosoa フォルダには hifi_gan と合わせた`decode.onnx`が保存される
 
-- onnx で実行したい場合は`run.py`を`--method=onnx`で実行する； `python run.py --yukarin_s_model_dir "model" --yukarin_sa_model_dir "model" --yukarin_sosoa_model_dir "model" --hifigan_model_dir "model"  --speaker_ids 5  --method=onnx`
+- onnx で実行したい場合は`run.py`を`--method=onnx`で実行する； `uv run run.py --yukarin_s_model_dir "model" --yukarin_sa_model_dir "model" --yukarin_sosoa_model_dir "model" --hifigan_model_dir "model"  --speaker_ids 5  --method=onnx`
   - `speaker_ids`に複数の数値を指定すれば、通常実行と同様に各話者の音声が保存される。
 
 ## ファイル構造
