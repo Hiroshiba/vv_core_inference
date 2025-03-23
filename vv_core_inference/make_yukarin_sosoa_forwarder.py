@@ -1,4 +1,5 @@
 import math
+from copy import deepcopy
 from pathlib import Path
 from typing import Optional
 
@@ -145,13 +146,13 @@ def make_yukarin_sosoa_wrapper(yukarin_sosoa_model_dir: Path, device) -> nn.Modu
     with yukarin_sosoa_model_dir.joinpath("config.yaml").open() as f:
         config_dict = yaml.safe_load(f)
     try:
-        config = OldConfig.from_dict(config_dict)
+        config = OldConfig.from_dict(deepcopy(config_dict))
         predictor = old_create_predictor(config.network)
         pe = predictor.encoder.embed[-1]
         predictor.encoder.embed[-1] = RelPositionalEncoding(pe.d_model, pe.dropout.p)
         is_old = True
     except Exception:
-        config = Config.from_dict(config_dict)
+        config = Config.from_dict(deepcopy(config_dict))
         predictor = create_predictor(config.network)
         pe = predictor.encoder.embed
         predictor.encoder.embed = RelPositionalEncoding(pe.hidden_size, pe.dropout.p)
