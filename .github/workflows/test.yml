@@ -31,15 +31,13 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - name: Install the project
-        run: uv sync --all-extras --dev
-
-      - name: Lint
-        shell: bash
-        run: |
-          ruff check --output-format=github .
-
       - name: Run script
         shell: bash
         run: |
           bash ${{ matrix.script }}
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
