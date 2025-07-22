@@ -28,5 +28,9 @@ hifi-gan = { git = "https://github.com/Hiroshiba/hifi-gan", rev = "265da0f0f7192
 pyopenjtalk = { git = "https://github.com/VOICEVOX/pyopenjtalk", rev = "b35fc89fe42948a28e33aed886ea145a51113f88" }
 old-yukarin-sosoa = { git = "https://github.com/Hiroshiba/old_yukarin_sosoa", rev = "38dcd81805549658d2a8a6e871cbc75513154c7a" }
 # メモ：
-# .\build.bat --config Release --build_wheel --parallel --use_webgpu --skip_tests
+# - ビルドコマンド：.\build.bat --config Release --build_wheel --parallel --use_webgpu --skip_tests
+# - dxil.dllとdxcompiler.dllを.venv/Lib/site-packages/onnxruntime/capiにコピーしないと動かないので注意
+#   ref: https://github.com/microsoft/onnxruntime/issues/25495
+# - intonation.onnxが動かない。intonation_unopt.onnxだと動く。
+#   onnxruntimeのバグかvv_core_inferenceのバグかは不明なので一旦保留。
 # onnxruntime = { path = "E:/onnxruntime/build/Windows/Release/Release/dist/onnxruntime-1.23.0-cp311-cp311-win_amd64.whl" }
