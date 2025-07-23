@@ -31,6 +31,5 @@ old-yukarin-sosoa = { git = "https://github.com/Hiroshiba/old_yukarin_sosoa", re
 # - ビルドコマンド：.\build.bat --config Release --build_wheel --parallel --use_webgpu --skip_tests
 # - dxil.dllとdxcompiler.dllを.venv/Lib/site-packages/onnxruntime/capiにコピーしないと動かないので注意
 #   ref: https://github.com/microsoft/onnxruntime/issues/25495
-# - intonation.onnxが動かない。intonation_unopt.onnxだと動く。
-#   onnxruntimeのバグかvv_core_inferenceのバグかは不明なので一旦保留。
+#   プルリクはすでに出ているので、おそらくリリース時には治っているはず：https://github.com/microsoft/onnxruntime/pull/25500
 # onnxruntime = { path = "E:/onnxruntime/build/Windows/Release/Release/dist/onnxruntime-1.23.0-cp311-cp311-win_amd64.whl" }

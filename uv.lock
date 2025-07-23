@@ -960,7 +960,7 @@ wheels = [
 [[package]]
 name = "onnxruntime"
 version = "1.23.0"
-source = { path = "../../onnxruntime/build/Windows/Release/Release/dist/onnxruntime-1.23.0-cp311-cp311-win_amd64.whl" }
+source = { path = "../../onnxruntime/build/Windows/Debug/Debug/dist/onnxruntime-1.23.0-cp311-cp311-win_amd64.whl" }
 dependencies = [
     { name = "coloredlogs" },
     { name = "flatbuffers" },
@@ -970,7 +970,7 @@ dependencies = [
     { name = "sympy" },
 ]
 wheels = [
-    { filename = "onnxruntime-1.23.0-cp311-cp311-win_amd64.whl", hash = "sha256:c890a736b8d0990b17cb9aeb78a46d8c8bbf818430d9f13c69fefe6355540c7a" },
+    { filename = "onnxruntime-1.23.0-cp311-cp311-win_amd64.whl", hash = "sha256:153d0b772d5abd3a0b1b7ae635593af9c9de1967e2c125a2635d0c80d70e69b2" },
 ]
 
 [package.metadata]
@@ -1702,7 +1702,7 @@ requires-dist = [
     { name = "numpy", specifier = "<1.26.4" },
     { name = "old-yukarin-sosoa", git = "https://github.com/Hiroshiba/old_yukarin_sosoa?rev=38dcd81805549658d2a8a6e871cbc75513154c7a" },
     { name = "onnx", specifier = "==1.14.0" },
-    { name = "onnxruntime", path = "../../onnxruntime/build/Windows/Release/Release/dist/onnxruntime-1.23.0-cp311-cp311-win_amd64.whl" },
+    { name = "onnxruntime", path = "../../onnxruntime/build/Windows/Debug/Debug/dist/onnxruntime-1.23.0-cp311-cp311-win_amd64.whl" },
     { name = "pyopenjtalk", git = "https://github.com/VOICEVOX/pyopenjtalk?rev=b35fc89fe42948a28e33aed886ea145a51113f88" },
     { name = "pyyaml", specifier = "==6.0.2" },
     { name = "ruff", specifier = ">=0.11.2" },
