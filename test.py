@@ -32,7 +32,7 @@ def run(
         )
 
     np.random.seed(0)
-    device = "wgpu" if use_gpu else "cpu"
+    device = "cuda" if use_gpu else "cpu"
     result = {
         "s": None,
         "sa": None,
