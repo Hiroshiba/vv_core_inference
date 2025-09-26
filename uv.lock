@@ -960,7 +960,7 @@ wheels = [
 [[package]]
 name = "onnxruntime"
 version = "1.23.0"
-source = { registry = "https://pypi.org/simple" }
+source = { path = "../../onnxruntime/build/Linux/Release/dist/onnxruntime-1.23.0-cp311-cp311-linux_x86_64.whl" }
 dependencies = [
     { name = "coloredlogs" },
     { name = "flatbuffers" },
@@ -970,23 +970,17 @@ dependencies = [
     { name = "sympy" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/00/8083a5fd84cdb1119b26530daf5d89d8214c2078096a5a065d8ca5ec8959/onnxruntime-1.23.0-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:ecf8c589d7d55bd645237442a97c9a2b4bd35bab35b20fc7f2bc81b70c062071", size = 17082400, upload-time = "2025-09-25T19:16:43.875Z" },
-    { url = "https://files.pythonhosted.org/packages/e8/19/1f87efecc03df75e1042cceb0d0b4645b121801c4b8022bd9d6c710fd214/onnxruntime-1.23.0-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:b703c42e6aee8d58d23b39ea856c4202173fcd4260e87fe08fc1d4e983d76f92", size = 19024671, upload-time = "2025-09-25T18:56:32.096Z" },
-    { url = "https://files.pythonhosted.org/packages/cd/e3/eaba11c440b35ea6fc9e6bb744ee4a50abcbd2e48fb388f1b15a5e7d6083/onnxruntime-1.23.0-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:e8634c5f54774df1e4d1debfdf2ca8f3274fe4ffc816ff5f861c01c48468a2c4", size = 15141724, upload-time = "2025-09-25T18:56:12.851Z" },
-    { url = "https://files.pythonhosted.org/packages/d0/5e/399ee9b1f2a9d17f23d5a8518ea45e42b6f4f7f5bbcc8526f74ca15e90bb/onnxruntime-1.23.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3c681ab5ae4fce92d09f4a86ac088a18ea36f8739115b8abf55e557cb6729e97", size = 17268940, upload-time = "2025-09-25T19:16:08.874Z" },
-    { url = "https://files.pythonhosted.org/packages/65/ed/286dfcabe1f929e23988a3dec2232b6140b19f8b8c72f445061b333772b4/onnxruntime-1.23.0-cp311-cp311-win_amd64.whl", hash = "sha256:a91e14627c08fbbde3c54fbce21e0903ce07a985f664f24d097cbfb01a930a69", size = 13390920, upload-time = "2025-09-25T19:16:33.945Z" },
-    { url = "https://files.pythonhosted.org/packages/fb/33/ec5395c9539423246e4976d6ec7c4e7a4624ad8bcbe783fea5c629d7980a/onnxruntime-1.23.0-cp312-cp312-macosx_13_0_arm64.whl", hash = "sha256:5921f2e106f5faf2b32095b2ecdfae047e445c3bce063e439dadc75c212e7be7", size = 17081368, upload-time = "2025-09-25T19:16:46.585Z" },
-    { url = "https://files.pythonhosted.org/packages/f0/3c/d1976a9933e075291a3d67f4e949c667ff36a3e3a4a0cbd883af3c4eae5a/onnxruntime-1.23.0-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:053df2f9c6522b258055bce4b776aa9ea3adb4b28d2530ab07b204a3d4b04bf9", size = 19028636, upload-time = "2025-09-25T18:56:34.457Z" },
-    { url = "https://files.pythonhosted.org/packages/1a/1f/5b76864a970a23dc85f8745d045b81a9151aa101bbb426af6fa489f59364/onnxruntime-1.23.0-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:974e327ca3b6d43da404b9a45df1f61e2503667fde46843ee7ad1567a98f3f0b", size = 15140544, upload-time = "2025-09-25T18:56:15.9Z" },
-    { url = "https://files.pythonhosted.org/packages/0b/62/84f23952d01e07ce8aa02e657e3a0c8fa40aba0d5e11a0e9904a9063af76/onnxruntime-1.23.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:05f67edb93678cab5cd77eda89b65bb1b58f3d4c0742058742cfad8b172cfa83", size = 17274126, upload-time = "2025-09-25T19:16:11.21Z" },
-    { url = "https://files.pythonhosted.org/packages/19/90/d5b4ea0bd6805f3f21aac2fe549a5b58ee10d1c99c499d867539620a002b/onnxruntime-1.23.0-cp312-cp312-win_amd64.whl", hash = "sha256:e100f3869da4c12b17a9b942934a96a542406f860eb8beb74a68342ea43aaa55", size = 13392437, upload-time = "2025-09-25T19:16:36.066Z" },
-    { url = "https://files.pythonhosted.org/packages/c4/59/dbd5731f2188c65c22f65e5b9dde45cf68510a14ecb1eb6fabd272da94c3/onnxruntime-1.23.0-cp313-cp313-macosx_13_0_arm64.whl", hash = "sha256:b6659f17326e64f2902cd31aa5efc1af41d0e0e3bd1357a75985e358412c35ca", size = 17081033, upload-time = "2025-09-25T18:56:27.426Z" },
-    { url = "https://files.pythonhosted.org/packages/ea/fd/6a95d7ab505517192966da8df5aec491eff1b32559ce8981299192194ca3/onnxruntime-1.23.0-cp313-cp313-macosx_13_0_x86_64.whl", hash = "sha256:9ef62369a0261aa15b1399addaaf17ed398e4e2128c8548fafcd73aac13820fd", size = 19029223, upload-time = "2025-09-25T18:56:36.85Z" },
-    { url = "https://files.pythonhosted.org/packages/11/51/673cf86f574a87a4fb9d4fb2cd1ccfcf362bc7c3f2ecb1919325e7fd0fd4/onnxruntime-1.23.0-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:0edee45d4119f7a6f187dc1b63e177e3e6c76932446006fd4f3e81540f260dfa", size = 15140613, upload-time = "2025-09-25T18:56:22.824Z" },
-    { url = "https://files.pythonhosted.org/packages/ce/ab/898f87a633f3063269fcee2f94b1e8349223f1f14fa730822d2cf6021c76/onnxruntime-1.23.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e2dc1993aa91d665faf2b17772e4e29a2999821e110c0e3d17e2b1c00d0e7f48", size = 17274274, upload-time = "2025-09-25T19:16:13.603Z" },
-    { url = "https://files.pythonhosted.org/packages/9b/69/070eae0d0369562d1dec0046ec2e3dd7c523adfae0f30b3887f81ef98c3b/onnxruntime-1.23.0-cp313-cp313-win_amd64.whl", hash = "sha256:e52c8603c4cc74746ece9966102e4fc6c2b355efc0102a9deb107f3ff86680af", size = 13392787, upload-time = "2025-09-25T19:16:38.871Z" },
-    { url = "https://files.pythonhosted.org/packages/42/8c/6f1d8ec63c887a855f65648b1c743f673191da94703b5fd207d21f17c292/onnxruntime-1.23.0-cp313-cp313t-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:24ac2a8b2c6dd00a152a08a9cf1ba3f06b38915f6cb6cf1adbe714e16e5ff460", size = 15148462, upload-time = "2025-09-25T18:56:25.11Z" },
-    { url = "https://files.pythonhosted.org/packages/eb/59/0db51308fa479f9325ade08c343a5164153ad01dbb83b62ff661e1129d2e/onnxruntime-1.23.0-cp313-cp313t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ed85686e08cfb29ee96365b9a49e8a350aff7557c13d63d9f07ca3ad68975074", size = 17281939, upload-time = "2025-09-25T19:16:16.16Z" },
+    { filename = "onnxruntime-1.23.0-cp311-cp311-linux_x86_64.whl", hash = "sha256:f7dad6297b1d9be610404d1125056e26a95cfff165ce09e93642af68338c1e91" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "coloredlogs" },
+    { name = "flatbuffers" },
+    { name = "numpy", specifier = ">=1.21.6" },
+    { name = "packaging" },
+    { name = "protobuf" },
+    { name = "sympy" },
 ]
 
 [[package]]
@@ -1708,8 +1702,7 @@ requires-dist = [
     { name = "numpy", specifier = "<1.26.4" },
     { name = "old-yukarin-sosoa", git = "https://github.com/Hiroshiba/old_yukarin_sosoa?rev=38dcd81805549658d2a8a6e871cbc75513154c7a" },
     { name = "onnx", specifier = "==1.14.0" },
-    { name = "onnxruntime" },
-    { name = "onnxruntime", specifier = "==1.23.0" },
+    { name = "onnxruntime", path = "../../onnxruntime/build/Linux/Release/dist/onnxruntime-1.23.0-cp311-cp311-linux_x86_64.whl" },
     { name = "pyopenjtalk", git = "https://github.com/VOICEVOX/pyopenjtalk?rev=b35fc89fe42948a28e33aed886ea145a51113f88" },
     { name = "pyyaml", specifier = "==6.0.2" },
     { name = "ruff", specifier = ">=0.11.2" },
