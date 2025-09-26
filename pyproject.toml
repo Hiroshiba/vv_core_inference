@@ -8,7 +8,8 @@ dependencies = [
     "numpy<1.26.4",
     "old-yukarin-sosoa",
     "onnx==1.14.0",
-    "onnxruntime==1.15.1",
+    # "onnxruntime==1.15.1",
+    "onnxruntime",
     "pyopenjtalk",
     "pyyaml==6.0.2",
     "ruff>=0.11.2",
@@ -26,3 +27,6 @@ yukarin-sosoa = { git = "https://github.com/Hiroshiba/yukarin_sosoa", rev = "22a
 hifi-gan = { git = "https://github.com/Hiroshiba/hifi-gan", rev = "265da0f0f71923336615d6657f195ffdc6df25e4" }
 pyopenjtalk = { git = "https://github.com/VOICEVOX/pyopenjtalk", rev = "b35fc89fe42948a28e33aed886ea145a51113f88" }
 old-yukarin-sosoa = { git = "https://github.com/Hiroshiba/old_yukarin_sosoa", rev = "38dcd81805549658d2a8a6e871cbc75513154c7a" }
+# メモ：
+# - ビルドコマンド：.\build.bat --config Release --build_wheel --parallel --use_webgpu --skip_tests
+onnxruntime = { path = "/home/sevenc7c/onnxruntime/build/Linux/Release/dist/onnxruntime-1.23.0-cp311-cp311-linux_x86_64.whl" }
